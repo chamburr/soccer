@@ -1,0 +1,12 @@
+[package]
+name = "soccer-bootloader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cortex-m = { version = "0.7", default-features = false, features = ["inline-asm"] }
+cortex-m-rt = { version = "0.7", default-features = false, features = [] }
+defmt-rtt = { version = "0.4", default-features = false, features = [] }
+embassy-boot-rp = { version = "0.2", default-features = false, features = [] }
+embassy-rp = { version = "0.1", default-features = false, features = ["critical-section-impl"] }
+embassy-sync = { version = "0.5", default-features = false, features = [] }

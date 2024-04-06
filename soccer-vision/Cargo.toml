@@ -1,0 +1,26 @@
+[package]
+name = "soccer-vision"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cortex-m = { version = "0.7", default-features = false, features = ["inline-asm"] }
+cortex-m-rt = { version = "0.7", default-features = false, features = [] }
+embassy-executor = { version = "0.5", default-features = false, features = ["arch-cortex-m", "executor-interrupt", "executor-thread", "integrated-timers", "nightly"] }
+embassy-futures = { version = "0.1", default-features = false, features = [] }
+embassy-rp = { version = "0.1", default-features = false, features = ["critical-section-impl", "rt", "time-driver"] }
+embassy-sync = { version = "0.5", default-features = false, features = [] }
+embassy-time = { version = "0.3", default-features = false, features = [] }
+embassy-usb-logger = { version = "0.1", default-features = false, features = [] }
+embedded-hal-nb = { version = "1.0", default-features = false, features = [] }
+fixed = { version = "1.23", default-features = false, features = [] }
+fixed-macro = { version = "1.2", default-features = false, features = [] }
+imu-fusion = { version = "0.2", default-features = false, features = [] }
+log = { version = "0.4", default-features = false, features = [] }
+nalgebra = { version = "0.32", default-features = false, features = ["libm"] }
+nb = { version = "1.0", default-features = false, features = [] }
+num-traits = { version = "0.2", default-features = false, features = ["libm"] }
+pio = { version = "0.2", default-features = false, features = [] }
+portable-atomic = { version = "1.6", default-features = false, features = ["critical-section"] }
+smart-leds = { version = "0.4", default-features = false, features = [] }
+static_cell = { version = "2.0", default-features = false, features = ["nightly"] }

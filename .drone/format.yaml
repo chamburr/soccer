@@ -1,0 +1,16 @@
+---
+kind: pipeline
+name: format
+
+steps:
+  - name: format rust
+    image: rust
+    commands:
+      - rustup component add rustfmt
+      - cargo fmt --check
+
+trigger:
+  event:
+    - push
+  branch:
+    - main
