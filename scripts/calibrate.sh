@@ -9,8 +9,6 @@ if [ ! -d "scripts/venv" ]; then
     source venv/bin/activate
     pip3 install -r requirements.txt
     cd ../
-else
-    source venv/bin/activate
 fi
 
 ip_address=$(./scripts/api.sh ip)
@@ -24,7 +22,7 @@ sleep 30 && kill $! > /dev/null && wait $! 2>/dev/null || true
 
 output=$(cat "/tmp/calibrate.txt" | defmt-print -e "target/thumbv6m-none-eabi/release/soccer-main")
 
-echo "$output" | grep 'Imu mag' | sed -e '$d' -e 's/.*: //' -e 's/, /,/g' > /tmp/calibrate.txt
+echo "$output" | grep --text 'Imu mag' | sed -e '$d' -e 's/.*: //' -e 's/, /,/g' > /tmp/calibrate.txt
 
 echo "Done collecting data"
 
