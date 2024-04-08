@@ -12,14 +12,14 @@ use defmt::info;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
-use num_traits::{clamp, Float};
+use num_traits::Float;
 use pid::Pid;
 
 const MOTOR_MIN: f32 = 26.;
 const MOTOR_MIN_FINAL: f32 = 27.;
 const MOTOR_ANGLE_RATIO: f32 = 0.2;
-const MOTOR_POSITION_RATIO: f32 = 0.7;
-const NO_COORDINATE_RATIO: f32 = 0.4;
+const MOTOR_POSITION_RATIO: f32 = 0.8;
+const NO_COORDINATE_MAX: f32 = 0.5;
 
 const STRIKER_DISTANCE: f32 = 30.;
 
@@ -88,10 +88,8 @@ async fn speed_angle_task() {
             }
         }
 
-        let mut pid_x = Pid::new(0., 1.);
-        let mut pid_y = Pid::new(0., 1.);
-        pid_x.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
-        pid_y.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
+        let mut pid = Pid::new(0., 1.);
+        pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
 
         loop {
             match select(COORDINATE_SIGNAL.wait(), subscriber.next_message()).await {
@@ -133,23 +131,16 @@ async fn speed_angle_task() {
                         (target.0, target.1)
                     };
 
-                    debug_variable!("target 0", tx);
-                    debug_variable!("target 1", ty);
+                    debug_variable!("target x", tx);
+                    debug_variable!("target y", ty);
 
                     let (x_diff, y_diff) = (tx - x, y - ty);
-                    let speed_x = -pid_x.next_control_output(x_diff).output;
-                    let speed_y = -pid_y.next_control_output(y_diff).output;
-
-                    debug_variable!("speed x", speed_x);
-                    debug_variable!("speed y", speed_y);
-
-                    let (mut speed, angle) = construct_vector(speed_x, speed_y);
+                    let (distance, angle) = construct_vector(x_diff, y_diff);
                     let angle = clamp_angle(angle.to_degrees() - heading);
-
-                    speed = clamp(speed, 0., 1.14); // 0.8 / 0.7
+                    let mut speed = -pid.next_control_output(distance).output;
 
                     if !ok {
-                        speed *= NO_COORDINATE_RATIO;
+                        speed = speed.min(NO_COORDINATE_MAX);
                     }
 
                     SPEED_ANGLE_SIGNAL.signal((speed, angle));
