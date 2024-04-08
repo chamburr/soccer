@@ -42,7 +42,7 @@ impl<T: Instance> Lidar<T> {
     }
 
     async fn init(&mut self, addr: u16) -> Result<(), Error> {
-        self.0.write_async(addr, [0x26, 100]).await?; // fps
+        self.0.write_async(addr, [0x26, 200]).await?; // fps
         Ok(())
     }
 
