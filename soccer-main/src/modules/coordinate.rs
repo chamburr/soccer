@@ -21,9 +21,6 @@ const FIELD_WIDTH_TOLERANCE: f32 = 8.;
 async fn coordinate_task() {
     let publisher = COORDINATE_CHANGED.immediate_publisher();
 
-    let mut last_length = 0.;
-    let mut last_width = 0.;
-
     let mut last_front = 0.;
     let mut last_back = 0.;
     let mut last_left = 0.;
@@ -81,9 +78,6 @@ async fn coordinate_task() {
             (front, back, left, right) = (left, right, front, back);
         }
 
-        debug_variable!("LAST width", last_width);
-        debug_variable!("LAST length", last_length);
-
         debug_variable!("lidar dist left", left.0);
         debug_variable!("lidar dist right", right.0);
         debug_variable!("lidar dist front", front.0);
@@ -97,7 +91,6 @@ async fn coordinate_task() {
         if (front.1).min(back.1) > LIDAR_SIGNAL_MIN
             && (front.0 + back.0 - FIELD_LENGTH).abs() < FIELD_LENGTH_TOLERANCE
         {
-            last_length = front.0 + back.0;
             ignore_front = 0;
             ignore_back = 0;
         } else {
@@ -122,7 +115,6 @@ async fn coordinate_task() {
         if (left.1).min(right.1) > LIDAR_SIGNAL_MIN
             && (left.0 + right.0 - FIELD_WIDTH).abs() < FIELD_WIDTH_TOLERANCE
         {
-            last_width = left.0 + right.0;
             ignore_left = 0;
             ignore_right = 0;
         } else {

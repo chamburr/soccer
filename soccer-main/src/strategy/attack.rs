@@ -53,7 +53,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
     }
 
     if state.last_captured.elapsed().as_millis() < CAPTURED_DURATION {
-        debug_variable!("reached", true);
+        debug_variable!("attack reached", true);
 
         if !state.aligned {
             if (x - bx).abs() < ALIGNED_THRESHOLD {
@@ -83,7 +83,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
                 * GRADUAL_CHANGE)
             .min(((y - FIELD_MARGIN_Y) / cos).max(0.));
 
-        debug_variable!("change", change);
+        debug_variable!("attack change", change);
 
         let new_x = x + change * sin;
         let new_y = y - change * cos;
@@ -96,7 +96,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
     state.initial_change = 0.;
     state.initial_magnitude = 0.;
 
-    debug_variable!("reached", false);
+    debug_variable!("attack reached", false);
 
     let (new_x, new_y);
 
@@ -110,7 +110,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
                 && (x - bx).abs() < CLEARANCE_X / 2.
                 && y < by + CLEARANCE_Y / 2.))
     {
-        debug_variable!("case", 1);
+        debug_variable!("attack case", 1);
 
         new_x = if ok && bx < FIELD_MARGIN + CLEARANCE_X + 10. {
             bx + (CLEARANCE_X / 2. + 5.)
@@ -134,7 +134,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
             state.last_moving_back = Instant::now();
         }
 
-        debug_variable!("case", 2);
+        debug_variable!("attack case", 2);
 
         let aligning = state.last_aligning.elapsed().as_millis();
 
