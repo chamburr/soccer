@@ -12,10 +12,10 @@ use num_traits::Float;
 const GAIN: f32 = 1.5;
 const REJECTION_ACC: f32 = 0.;
 const REJECTION_MAG: f32 = 0.;
-const REJECTION_PERIOD: i32 = 400;
+const REJECTION_PERIOD: i32 = 300;
 
 const MAGNETOMETER_MAX: f32 = 1500.;
-const MAGNETOMETER_GYR_MAX: f32 = 25.;
+const MAGNETOMETER_GYR_MAX: f32 = 30.;
 
 struct Offset {
     coefficient: f32,
@@ -32,7 +32,7 @@ impl Offset {
     fn new() -> Self {
         Self {
             coefficient: 0.05,
-            threshold: 1.0,
+            threshold: 1.5,
             readings: 150,
             timer: 0,
             initialised: false,
