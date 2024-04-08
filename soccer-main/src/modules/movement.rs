@@ -120,7 +120,6 @@ async fn speed_angle_task() {
                             )
                         } else {
                             let goalie_y = if !goalie {
-                                // intended
                                 FIELD_LENGTH - FIELD_MARGIN_Y - STRIKER_DISTANCE
                             } else {
                                 FIELD_LENGTH - FIELD_MARGIN

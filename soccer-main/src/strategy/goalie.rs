@@ -7,7 +7,7 @@ use embassy_time::Instant;
 use num_traits::{clamp, Float};
 
 const GOALIE_DISTANCE: f32 = 3.;
-const MOVEMENT_THRESHOLD_X: f32 = 7.5; // todo: increase?
+const MOVEMENT_THRESHOLD_X: f32 = 7.5;
 const MOVEMENT_THRESHOLD_Y: f32 = 7.5;
 const CHANGED_THRESHOLD: u64 = 2500;
 const MIN_X: f32 = 10.;

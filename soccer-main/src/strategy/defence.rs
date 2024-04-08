@@ -29,7 +29,7 @@ pub async fn run(data: Data, state: &mut DefenceState) {
     }
 
     if state.last_push.elapsed().as_millis() < LAST_PUSH_THRESHOLD {
-        COORDINATE_SIGNAL.signal((bx, by + 1.5)); // should +1.5 ??
+        COORDINATE_SIGNAL.signal((bx, by + 1.5));
     } else {
         COORDINATE_SIGNAL.signal((bx, by - CLEARANCE_Y - 2.));
     }

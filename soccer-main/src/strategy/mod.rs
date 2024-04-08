@@ -5,10 +5,7 @@ use crate::{
         FIELD_MARGIN_Y, FIELD_WIDTH,
     },
     hardware::{BALL_SIGNAL, LINE_SIGNAL},
-    modules::{
-        BALL_CHANGED, BALL_MUTEX, COORDINATE_MUTEX, COORDINATE_SIGNAL, HEADING_SIGNAL,
-        UNIGNORE_SIGNAL,
-    },
+    modules::{BALL_CHANGED, BALL_MUTEX, COORDINATE_MUTEX, COORDINATE_SIGNAL, UNIGNORE_SIGNAL},
     strategy::{
         attack::AttackState, bounds::BoundsState, clear::ClearState, defence::DefenceState,
         get_out::GetOutState, goalie::GoalieState, no_ball::NoBallState,
@@ -33,7 +30,7 @@ pub mod no_ball;
 const STRATEGY_DURATION: u64 = 15;
 const BOUNDS_DURATION: u64 = 100;
 const NO_BALL_DURATION: u64 = 500;
-const GOALIE_NO_BALL_DURATION: u64 = 200; // goalie should return home more
+const GOALIE_NO_BALL_DURATION: u64 = 200;
 const GOALIE_ATTACK_DURATION: u64 = 6000;
 const STRIKER_DISTANCE: f32 = 30.;
 
@@ -194,18 +191,6 @@ async fn strategy_task() {
         } else {
             last_changed = Instant::now();
         }
-
-        // if get_config!(go_home) {
-        //     HEADING_SIGNAL.signal(0.);
-        //     COORDINATE_SIGNAL.signal((FIELD_WIDTH / 2., FIELD_LENGTH - FIELD_MARGIN_Y));
-        //     continue;
-        // }
-
-        // if get_config!(go_other) {
-        //     HEADING_SIGNAL.signal(0.);
-        //     COORDINATE_SIGNAL.signal((FIELD_MARGIN, FIELD_MARGIN_Y));
-        //     continue;
-        // }
 
         match strategy {
             Strategy::Attack => {

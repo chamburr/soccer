@@ -3,7 +3,7 @@ use crate::{
     strategy::Data,
 };
 
-const MOVE_DISTANCE: f32 = 10.; // effectively, speed
+const MOVE_DISTANCE: f32 = 10.; // effectively speed
 
 #[derive(Default)]
 pub struct BoundsState {

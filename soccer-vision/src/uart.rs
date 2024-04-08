@@ -114,7 +114,7 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART0, Async>) {
                         continue;
                     }
 
-                    cortex_m::peripheral::SCB::sys_reset(); // remove this?
+                    cortex_m::peripheral::SCB::sys_reset();
                 }
                 _ => {
                     if len != 0 {

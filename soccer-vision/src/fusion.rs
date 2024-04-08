@@ -7,8 +7,6 @@ use embassy_time::{Instant, Timer};
 use imu_fusion::{FusionAhrs, FusionAhrsSettings, FusionConvention, FusionMatrix, FusionVector};
 use num_traits::Float;
 
-// todo: calibrate values, increase?
-
 const GAIN: f32 = 1.5;
 const REJECTION_ACC: f32 = 0.;
 const REJECTION_MAG: f32 = 0.;

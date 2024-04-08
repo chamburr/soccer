@@ -18,8 +18,6 @@ macro_rules! init_config {
 
 init_config! {
     started: bool = false,
-    go_home: bool = false,
-    go_other: bool = false,
     print_imu: bool = false,
     angle: f32 = 999.,
     goalie: bool = false,

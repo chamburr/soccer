@@ -8,25 +8,11 @@ use crate::{
 
 debug_functions! {
     async fn start() {
-        set_config!(go_other, false);
-        set_config!(go_home, false);
         utils::start().await;
     }
 
     async fn drive(speed: f32, angle: f32, rotation: f32) {
         movement::drive(speed, angle, rotation);
-    }
-
-    async fn go_home() {
-        set_config!(go_other, false);
-        set_config!(go_home, true);
-        set_config!(started, true);
-    }
-
-    async fn go_other() {
-        set_config!(go_other, true);
-        set_config!(go_home, false);
-        set_config!(started, true);
     }
 
     async fn set_goalie(enable: bool) {
