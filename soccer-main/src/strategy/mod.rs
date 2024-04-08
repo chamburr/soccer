@@ -183,7 +183,8 @@ async fn strategy_task() {
         if lines.0 || lines.1 || lines.2 || lines.3 {
             strategy = Strategy::Bounds;
             last_changed = Instant::now();
-        } else if strategy != last_strategy
+        } else if last_strategy != Strategy::NoBall
+            && strategy != last_strategy
             && ((last_strategy == Strategy::Bounds
                 && last_changed.elapsed().as_millis() < BOUNDS_DURATION)
                 || (last_strategy != Strategy::Bounds
