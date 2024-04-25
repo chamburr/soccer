@@ -1,11 +1,10 @@
 use crate::{
-    config::{get_config, set_config},
+    config::set_config,
     modules::{
         movement::{drive, ROTATION_SIGNAL, SPEED_ANGLE_SIGNAL},
-        COORDINATE_MUTEX, COORDINATE_SIGNAL, HEADING_MUTEX, HEADING_SIGNAL,
+        COORDINATE_MUTEX, COORDINATE_SIGNAL, HEADING_SIGNAL,
     },
 };
-use embassy_time::Timer;
 use num_traits::Float;
 
 #[cfg(feature = "network")]
@@ -58,22 +57,6 @@ pub fn construct_vector(x: f32, y: f32) -> (f32, f32) {
 }
 
 pub async fn start() {
-    if get_config!(angle) >= 999. {
-        loop {
-            let heading = read_mutex!(HEADING_MUTEX);
-            if heading != 0. {
-                break;
-            }
-        }
-
-        let mut total = 0.;
-        for _ in 0..40 {
-            total += read_mutex!(HEADING_MUTEX);
-            Timer::after_millis(5).await;
-        }
-        let zero_angle = total / 40.;
-        set_config!(angle, zero_angle);
-    }
     set_config!(started, true);
 }
 

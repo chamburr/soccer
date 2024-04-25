@@ -19,16 +19,10 @@ debug_functions! {
         set_config!(goalie, enable);
     }
 
-    async fn set_pid(p1: f32, d1: f32, p2: f32, d2: f32) {
+    async fn set_pid(p1: f32, d1: f32) {
         set_config!(pid_p, p1);
         set_config!(pid_d, d1);
-        set_config!(pid2_p, p2);
-        set_config!(pid2_d, d2);
         HEADING_SIGNAL.signal(0.01);
-    }
-
-    async fn print_imu(enable: bool) {
-        set_config!(print_imu, enable);
     }
 
     async fn stop() {

@@ -12,7 +12,6 @@ use embassy_rp::{
     config::Config,
     multicore::{spawn_core1, Stack},
 };
-use embassy_time::Timer;
 use static_cell::StaticCell;
 
 #[cfg(feature = "network")]
@@ -48,17 +47,8 @@ async fn core0_task(spawner: Spawner, p: Peripherals0) {
 
     hardware::uart::init(&spawner, p.uart).await;
     hardware::camera::init(&spawner, p.camera).await;
-    hardware::imu::init(&spawner, p.imu).await;
     hardware::motor::init(&spawner, p.motor).await;
     hardware::temts::init(&spawner, p.temts).await;
-
-    let mut button = p.button.BOOTSEL;
-    while !config::get_config!(started) {
-        if button.is_pressed() {
-            utils::start().await;
-        }
-        Timer::after_millis(10).await;
-    }
 }
 
 #[embassy_executor::task]

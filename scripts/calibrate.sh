@@ -11,22 +11,21 @@ if [ ! -d "scripts/venv" ]; then
     cd ../
 fi
 
-ip_address=$(./scripts/api.sh ip)
+cargo build -p soccer-vision --features calibration --release
 
-curl -s -d "name=print_imu" -d "args=enable=true" "http://$ip_address/api/execute" > /dev/null
+read -p "Unpower, put into bootloader mode and press enter..."
 
 echo "Collecting data for 30 seconds..."
 
-websocat -t --no-line "autoreconnect:ws://$ip_address/logs" "writefile:/tmp/calibrate.txt" &
-sleep 30 && kill $! > /dev/null && wait $! 2>/dev/null || true
+cargo run -p soccer-vision --features calibration --release > /tmp/calibrate.txt &
+sleep 30 && kill -SIGINT $! > /dev/null || true
 
-output=$(cat "/tmp/calibrate.txt" | defmt-print -e "target/thumbv6m-none-eabi/release/soccer-main")
+sleep 2
 
+output=$(cat /tmp/calibrate.txt)
 echo "$output" | grep --text 'Imu mag' | sed -e '$d' -e 's/.*: //' -e 's/, /,/g' > /tmp/calibrate.txt
 
 echo "Done collecting data"
-
-curl -s -d "name=print_imu" -d "args=enable=false" "http://$ip_address/api/execute" > /dev/null
 
 cd scripts
 source venv/bin/activate

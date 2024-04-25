@@ -16,11 +16,10 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal}
 use log::info;
 use static_cell::StaticCell;
 
-mod bluetooth;
 mod calibration;
 mod fusion;
 mod led;
-mod lidar;
+mod lidar_imu;
 mod logger;
 mod uart;
 
@@ -37,7 +36,7 @@ async fn core0_task(spawner: Spawner, p: Peripherals) {
     info!("Starting up core 0");
 
     led::init(&spawner, p.PIO0, p.DMA_CH0, p.PIN_16).await;
-    lidar::init(&spawner, p.I2C0, p.PIN_5, p.PIN_4, p.I2C1, p.PIN_3, p.PIN_2).await;
+    lidar_imu::init(&spawner, p.I2C0, p.PIN_5, p.PIN_4, p.I2C1, p.PIN_3, p.PIN_2).await;
     uart::init(&spawner, p.UART0, p.PIN_0, p.PIN_1, p.DMA_CH1, p.DMA_CH2).await;
 
     CORE_SIGNAL.wait().await;

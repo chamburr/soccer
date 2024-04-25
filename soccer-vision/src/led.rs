@@ -118,10 +118,10 @@ async fn led_task(mut led: Led<'static>) {
     }
 }
 
-pub async fn init(spawner: &Spawner, pio0: PIO0, dma: DMA_CH0, pin: PIN_16) {
+pub async fn init(spawner: &Spawner, pio: PIO0, dma: DMA_CH0, pin: PIN_16) {
     info!("Starting led");
 
-    let led = Led::new(pio0, dma, pin);
+    let led = Led::new(pio, dma, pin);
 
     spawner.spawn(led_task(led)).unwrap();
 }

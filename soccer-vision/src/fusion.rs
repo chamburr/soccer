@@ -1,19 +1,30 @@
 use crate::{
     calibration::{ACC_MISALIGNMENT, ACC_OFFSET, HARD_IRON_OFFSET, SOFT_IRON_MATRIX},
-    uart::{Command, IMU_SIGNAL, UART_CHANNEL},
+    uart::{Command, UART_CHANNEL},
+    CriticalSectionRawMutex,
 };
 use embassy_executor::Spawner;
+use embassy_sync::signal::Signal;
 use embassy_time::{Instant, Timer};
 use imu_fusion::{FusionAhrs, FusionAhrsSettings, FusionConvention, FusionMatrix, FusionVector};
 use num_traits::Float;
 
-const GAIN: f32 = 1.5;
-const REJECTION_ACC: f32 = 0.;
-const REJECTION_MAG: f32 = 0.;
-const REJECTION_PERIOD: i32 = 300;
+const GAIN: f32 = 1.;
+const REJECTION_ACC: f32 = 0.01;
+const REJECTION_MAG: f32 = 1.5;
+const REJECTION_PERIOD: i32 = 0;
+const TARE_COUNT: u32 = 500;
 
 const MAGNETOMETER_MAX: f32 = 1500.;
-const MAGNETOMETER_GYR_MAX: f32 = 30.;
+const MAGNETOMETER_GYR_MAX: f32 = 25.;
+
+pub static IMU_SIGNAL: Signal<CriticalSectionRawMutex, ImuData> = Signal::new();
+
+pub struct ImuData {
+    pub acc: (f32, f32, f32),
+    pub gyr: (f32, f32, f32),
+    pub mag: (f32, f32, f32),
+}
 
 struct Offset {
     coefficient: f32,
@@ -30,7 +41,7 @@ impl Offset {
     fn new() -> Self {
         Self {
             coefficient: 0.05,
-            threshold: 1.5,
+            threshold: 2.,
             readings: 150,
             timer: 0,
             initialised: false,
@@ -95,7 +106,6 @@ fn clamp_angle(angle: f32) -> f32 {
 async fn fusion_task() {
     let mut offset = Offset::new();
     let mut fusion = FusionAhrs::new();
-    let mut must_reset = false;
 
     fusion.update_settings(FusionAhrsSettings {
         convention: FusionConvention::NWU,
@@ -143,7 +153,11 @@ async fn fusion_task() {
         SOFT_IRON_MATRIX[2][2],
     );
 
-    Timer::after_millis(100).await;
+    Timer::after_millis(200).await;
+
+    let mut tare_count = TARE_COUNT as i32;
+    let mut tare_total = 0.;
+    let mut tare_angle = 0.;
 
     IMU_SIGNAL.wait().await;
     let mut prev_time = Instant::now();
@@ -151,10 +165,6 @@ async fn fusion_task() {
     loop {
         let data = IMU_SIGNAL.wait().await;
         let dt = prev_time.elapsed().as_micros() as f32 / 1000000.;
-
-        if dt >= 0.5 {
-            must_reset = true;
-        }
 
         prev_time = Instant::now();
 
@@ -177,13 +187,18 @@ async fn fusion_task() {
             fusion.update(gyr, acc, mag, dt);
         }
 
-        if must_reset {
-            must_reset = false;
-            fusion.magnetic_recovery_trigger = REJECTION_PERIOD;
+        let angle = clamp_angle(fusion.quaternion.euler().angle.yaw - tare_angle);
+
+        if tare_count >= 0 {
+            if tare_count == 0 {
+                tare_angle = tare_total / (tare_count as f32);
+            } else {
+                tare_total += angle;
+            }
+            tare_count -= 1;
             continue;
         }
 
-        let angle = clamp_angle(fusion.quaternion.euler().angle.yaw);
         let _ = UART_CHANNEL.try_send(Command::Positioning { angle });
     }
 }

@@ -1,14 +1,9 @@
-use embassy_sync::{
-    blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, signal::Signal,
-};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 
 pub mod camera;
-pub mod imu;
 pub mod motor;
 pub mod temts;
 pub mod uart;
-
-pub static UART_CHANNEL: Channel<CriticalSectionRawMutex, Command, 4> = Channel::new();
 
 pub static CAMERA_SIGNAL: Signal<CriticalSectionRawMutex, CameraData> = Signal::new();
 pub static IMU_SIGNAL: Signal<CriticalSectionRawMutex, ImuData> = Signal::new();
@@ -16,14 +11,6 @@ pub static LIDAR_SIGNAL: Signal<CriticalSectionRawMutex, LidarData> = Signal::ne
 pub static LINE_SIGNAL: Signal<CriticalSectionRawMutex, LineData> = Signal::new();
 pub static BALL_SIGNAL: Signal<CriticalSectionRawMutex, bool> = Signal::new();
 pub static MOTOR_SIGNAL: Signal<CriticalSectionRawMutex, MotorData> = Signal::new();
-
-pub enum Command {
-    Imu {
-        acc: (i16, i16, i16),
-        gyr: (i16, i16, i16),
-        mag: (i16, i16, i16),
-    },
-}
 
 pub struct LineData {
     pub front: bool,

@@ -17,14 +17,10 @@ macro_rules! init_config {
 }
 
 init_config! {
-    started: bool = false,
-    print_imu: bool = false,
-    angle: f32 = 999.,
-    goalie: bool = false,
+    started: bool = true,
+    goalie: bool = true,
     pid_p: f32 = 0.04,
     pid_d: f32 = 0.13,
-    pid2_p: f32 = 0.02,
-    pid2_d: f32 = 0.,
 }
 
 macro_rules! get_config {

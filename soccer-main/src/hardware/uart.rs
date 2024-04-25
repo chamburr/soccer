@@ -1,6 +1,5 @@
 use crate::{
-    config::get_config,
-    hardware::{Command, ImuData, LidarData, IMU_SIGNAL, LIDAR_SIGNAL, UART_CHANNEL},
+    hardware::{ImuData, LidarData, IMU_SIGNAL, LIDAR_SIGNAL},
     peripherals::PeripheralsUart,
     utils::clamp_angle,
 };
@@ -9,9 +8,9 @@ use embassy_executor::Spawner;
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART1,
-    uart::{Async, Config, Error, InterruptHandler, ReadToBreakError, Uart, UartRx, UartTx},
+    uart::{Async, Config, Error, InterruptHandler, ReadToBreakError, Uart, UartRx},
 };
-use embassy_time::{with_timeout, Duration, Timer};
+use embassy_time::{with_timeout, Duration};
 use embedded_hal_nb::serial::Read;
 
 bind_interrupts!(struct Irqs {
@@ -19,49 +18,8 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-async fn uart_tx_task(mut tx: UartTx<'static, UART1, Async>) {
-    let _ = tx.write(&[2, 1, 2, 3, 4]).await;
-    let _ = tx.send_break(0).await;
-
-    Timer::after_millis(500).await; // wait for reset
-
-    for _ in 0..4 {
-        let _ = UART_CHANNEL.try_receive();
-    }
-
-    loop {
-        match UART_CHANNEL.receive().await {
-            Command::Imu { acc, gyr, mag } => {
-                let acc_x = acc.0.to_le_bytes();
-                let acc_y = acc.1.to_le_bytes();
-                let acc_z = acc.2.to_le_bytes();
-                let gyr_x = gyr.0.to_le_bytes();
-                let gyr_y = gyr.1.to_le_bytes();
-                let gyr_z = gyr.2.to_le_bytes();
-                let mag_x = mag.0.to_le_bytes();
-                let mag_y = mag.1.to_le_bytes();
-                let mag_z = mag.2.to_le_bytes();
-
-                let _ = tx
-                    .write(&[
-                        1, acc_x[0], acc_x[1], acc_y[0], acc_y[1], acc_z[0], acc_z[1], gyr_x[0],
-                        gyr_x[1], gyr_y[0], gyr_y[1], gyr_z[0], gyr_z[1], mag_x[0], mag_x[1],
-                        mag_y[0], mag_y[1], mag_z[0], mag_z[1],
-                    ])
-                    .await;
-                let _ = tx.send_break(0).await;
-            }
-        }
-
-        Timer::after_micros(250).await;
-    }
-}
-
-#[embassy_executor::task]
 async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
     let mut buf = [0; 32];
-
-    Timer::after_millis(500).await; // wait for reset
 
     for _ in 0..10 {
         let _ = with_timeout(Duration::from_millis(10), rx.read_to_break(&mut buf)).await;
@@ -96,13 +54,8 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
                         continue;
                     }
 
-                    let mut zero_angle = get_config!(angle);
-                    if zero_angle >= 999. {
-                        zero_angle = 0.;
-                    }
-
                     let angle = (i16::from_le_bytes([buf[1], buf[2]]) as f32) / 128.;
-                    let angle = clamp_angle(angle - zero_angle);
+                    let angle = clamp_angle(angle);
 
                     IMU_SIGNAL.signal(ImuData {
                         angle: clamp_angle(angle),
@@ -135,8 +88,7 @@ pub async fn init(spawner: &Spawner, p: PeripheralsUart) {
     let uart = Uart::new(
         p.UART1, p.PIN_20, p.PIN_21, Irqs, p.DMA_CH3, p.DMA_CH4, config,
     );
-    let (tx, rx) = uart.split();
+    let (_, rx) = uart.split();
 
-    spawner.must_spawn(uart_tx_task(tx));
     spawner.must_spawn(uart_rx_task(rx));
 }
