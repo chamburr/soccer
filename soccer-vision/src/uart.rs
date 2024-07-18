@@ -7,6 +7,7 @@ use embassy_rp::{
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
 use num_traits::Float;
+use log::{info, warn};
 
 bind_interrupts!(struct Irqs {
     UART0_IRQ => InterruptHandler<UART0>;
@@ -45,6 +46,11 @@ async fn uart_tx_task(mut tx: UartTx<'static, UART0, Async>) {
                 let dis_b = back.0.to_le_bytes();
                 let sig_b = back.1.to_le_bytes();
 
+                // info!("front dist: {:?}, sig: {:?}", dis_f, sig_f);
+                // info!("left dist: {:?}, sig: {:?}", dis_l, sig_l);
+                // info!("right dist: {:?}, sig: {:?}", dis_r, sig_r);
+                // info!("back dist: {:?}, sig: {:?}", dis_b, sig_b);
+
                 let _ = tx
                     .write(&[
                         1, dis_f[0], dis_f[1], sig_f[0], sig_f[1], dis_l[0], dis_l[1], sig_l[0],
@@ -53,6 +59,8 @@ async fn uart_tx_task(mut tx: UartTx<'static, UART0, Async>) {
                     ])
                     .await;
                 let _ = tx.send_break(0).await;
+
+                // info!("Sent lidar data");
             }
             Command::Positioning { angle } => {
                 let angle = ((angle * 128.).round() as i16).to_le_bytes();

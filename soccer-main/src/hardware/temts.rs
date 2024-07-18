@@ -23,6 +23,7 @@ async fn temts_task(
     mut line_back: Input<'static>,
     mut ball: Input<'static>,
 ) {
+    // info!("started temts task");
     let mut line_front_high = line_front.is_high();
     let mut line_left_high = line_left.is_high();
     let mut line_right_high = line_right.is_high();
@@ -31,6 +32,7 @@ async fn temts_task(
     let mut ball_high = ball.is_high();
 
     loop {
+        // info!("temts loop");
         match select(
             select4(
                 wait_for(&mut line_front, line_front_high),

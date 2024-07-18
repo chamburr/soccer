@@ -1,0 +1,482 @@
+diff --git a/scripts/bootstrap.sh b/scripts/bootstrap.sh
+index bb2b125..8f710fb 100755
+--- a/scripts/bootstrap.sh
++++ b/scripts/bootstrap.sh
+@@ -10,8 +10,8 @@ echo "Flashing bootloader..."
+ cargo flash -p soccer-bootloader --chip RP2040 --release
+ 
+ echo "Flashing firmware..."
+-probe-rs download firmware/43439A0.bin --format bin --chip RP2040 --base-address 0x10108000
+-probe-rs download firmware/43439A0_clm.bin --format bin --chip RP2040 --base-address 0x10148000
++probe-rs download firmware/43439A0.bin --binary-format bin --chip RP2040 --base-address 0x10108000
++probe-rs download firmware/43439A0_clm.bin --binary-format bin --chip RP2040 --base-address 0x10148000
+ 
+ echo "Flashing software..."
+ cargo flash -p soccer-main --chip RP2040 --release
+diff --git a/soccer-main/src/hardware/camera.rs b/soccer-main/src/hardware/camera.rs
+index b1e1a1d..3665ca8 100644
+--- a/soccer-main/src/hardware/camera.rs
++++ b/soccer-main/src/hardware/camera.rs
+@@ -21,6 +21,7 @@ bind_interrupts!(struct Irqs {
+ 
+ #[embassy_executor::task]
+ async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'static>) {
++    info!("camera task started");
+     let mut buf = [0; 32];
+ 
+     for _ in 0..10 {
+@@ -30,6 +31,7 @@ async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'s
+     let mut timeouts = 0;
+ 
+     loop {
++        info!("camera loop");
+         match with_timeout(Duration::from_millis(50), rx.read_to_break(&mut buf)).await {
+             Ok(Ok(len)) => {
+                 match buf[0] {
+diff --git a/soccer-main/src/hardware/motor.rs b/soccer-main/src/hardware/motor.rs
+index 1bca779..a06c198 100644
+--- a/soccer-main/src/hardware/motor.rs
++++ b/soccer-main/src/hardware/motor.rs
+@@ -47,18 +47,30 @@ async fn motor_task(
+     mut motor_br: Motor<PWM_CH4>,
+ ) {
+     loop {
+-        let data = MOTOR_SIGNAL.wait().await;
++        // let data = MOTOR_SIGNAL.wait().await;
+ 
+-        motor_fl.set_speed(data.fl);
+-        motor_fr.set_speed(data.fr);
+-        motor_bl.set_speed(data.bl);
+-        motor_br.set_speed(data.br);
++        // motor_fl.set_speed(data.fl);
++        // motor_fr.set_speed(data.fr);
++        // motor_bl.set_speed(data.bl);
++        // motor_br.set_speed(data.br);
++
++        // test
++        // info!("running motors");
++        motor_fl.set_speed(20);
++        motor_fr.set_speed(20);
++        motor_bl.set_speed(20);
++        motor_br.set_speed(20);
+     }
+ }
+ 
+ pub async fn init(spawner: &Spawner, p: PeripheralsMotor) {
+     info!("Starting motor");
+ 
++    // front right = 6, 7
++    // back right = 8, 9
++    // back left = 10, 11
++    // front left = 14, 15
++
+     let motor_fl = Motor::new(p.PWM_CH7, p.PIN_14, p.PIN_15);
+     let motor_fr = Motor::new(p.PWM_CH3, p.PIN_6, p.PIN_7);
+     let motor_bl = Motor::new(p.PWM_CH5, p.PIN_10, p.PIN_11);
+diff --git a/soccer-main/src/hardware/temts.rs b/soccer-main/src/hardware/temts.rs
+index 386e910..83f7167 100644
+--- a/soccer-main/src/hardware/temts.rs
++++ b/soccer-main/src/hardware/temts.rs
+@@ -23,6 +23,7 @@ async fn temts_task(
+     mut line_back: Input<'static>,
+     mut ball: Input<'static>,
+ ) {
++    // info!("started temts task");
+     let mut line_front_high = line_front.is_high();
+     let mut line_left_high = line_left.is_high();
+     let mut line_right_high = line_right.is_high();
+@@ -31,6 +32,7 @@ async fn temts_task(
+     let mut ball_high = ball.is_high();
+ 
+     loop {
++        // info!("temts loop");
+         match select(
+             select4(
+                 wait_for(&mut line_front, line_front_high),
+diff --git a/soccer-main/src/hardware/uart.rs b/soccer-main/src/hardware/uart.rs
+index f357372..20096c2 100644
+--- a/soccer-main/src/hardware/uart.rs
++++ b/soccer-main/src/hardware/uart.rs
+@@ -8,9 +8,9 @@ use embassy_executor::Spawner;
+ use embassy_rp::{
+     bind_interrupts,
+     peripherals::UART1,
+-    uart::{Async, Config, Error, InterruptHandler, ReadToBreakError, Uart, UartRx},
++    uart::{Async, Config, Error, InterruptHandler, ReadToBreakError, Uart, UartRx, UartTx},
+ };
+-use embassy_time::{with_timeout, Duration};
++use embassy_time::{with_timeout, Duration, Timer};
+ use embedded_hal_nb::serial::Read;
+ 
+ bind_interrupts!(struct Irqs {
+@@ -20,16 +20,20 @@ bind_interrupts!(struct Irqs {
+ #[embassy_executor::task]
+ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
+     let mut buf = [0; 32];
++    info!("running task");
+ 
+     for _ in 0..10 {
+         let _ = with_timeout(Duration::from_millis(10), rx.read_to_break(&mut buf)).await;
++        info!("reading data");
+     }
+ 
+     loop {
++        info!("uart loop");
+         match with_timeout(Duration::from_millis(10), rx.read_to_break(&mut buf)).await {
+             Ok(Ok(len)) => match buf[0] {
+                 1 => {
+                     if len != 17 {
++                        warn!("Incorrect length");
+                         continue;
+                     }
+ 
+@@ -48,6 +52,12 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
+                         right: (dis_r, sig_r),
+                         back: (dis_b, sig_b),
+                     });
++
++                    info!("front dist: {}, sig: {}", dis_f, sig_f);
++                    info!("left dist: {}, sig: {}", dis_l, sig_l);
++                    info!("right dist: {}, sig: {}", dis_r, sig_r);
++                    info!("back dist: {}, sig: {}", dis_b, sig_b);
++
+                 }
+                 2 => {
+                     if len != 3 {
+@@ -79,8 +89,26 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
+     }
+ }
+ 
++#[embassy_executor::task]
++async fn uart_tx_task(mut tx: UartTx<'static, UART1, Async>) {
++    // let _ = tx.write(&[2, 1, 2, 3, 4]).await;
++    // let _ = tx.send_break(0).await;
++    info!("tx task");
++
++    // Timer::after_millis(500).await; // wait for reset
++
++    loop {
++        // let _ = tx.write(&[2, 1, 2, 3, 4]).await;
++        // let _ = tx.send_break(0).await;
++        info!("tx loop");
++
++        // Timer::after_micros(250).await;
++    }
++}
++
+ pub async fn init(spawner: &Spawner, p: PeripheralsUart) {
+     info!("Starting uart");
++    info!("testing");
+ 
+     let mut config = Config::default();
+     config.baudrate = 921600;
+@@ -88,7 +116,11 @@ pub async fn init(spawner: &Spawner, p: PeripheralsUart) {
+     let uart = Uart::new(
+         p.UART1, p.PIN_20, p.PIN_21, Irqs, p.DMA_CH3, p.DMA_CH4, config,
+     );
+-    let (_, rx) = uart.split();
++    // let (_, rx) = uart.split();
++    let (tx, rx) = uart.split();
+ 
+     spawner.must_spawn(uart_rx_task(rx));
++    info!("spawn rx?");
++    spawner.must_spawn(uart_tx_task(tx));
++    info!("spawn tx?");
+ }
+diff --git a/soccer-main/src/modules/movement.rs b/soccer-main/src/modules/movement.rs
+index 2306c26..71ceb99 100644
+--- a/soccer-main/src/modules/movement.rs
++++ b/soccer-main/src/modules/movement.rs
+@@ -89,7 +89,8 @@ async fn speed_angle_task() {
+         }
+ 
+         let mut pid = Pid::new(0., 1.);
+-        pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
++        // pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
++        pid.p(get_config!(pid_p), 1.).d(get_config!(pid_d), 1.);
+ 
+         loop {
+             match select(COORDINATE_SIGNAL.wait(), subscriber.next_message()).await {
+diff --git a/soccer-vision/src/lidar_imu.rs b/soccer-vision/src/lidar_imu.rs
+index 9eaa4eb..6e1c57e 100644
+--- a/soccer-vision/src/lidar_imu.rs
++++ b/soccer-vision/src/lidar_imu.rs
+@@ -9,7 +9,7 @@ use embassy_rp::{
+     bind_interrupts,
+     i2c::{Async, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin},
+     interrupt::typelevel::Binding,
+-    peripherals::{I2C0, I2C1, PIN_2, PIN_3, PIN_4, PIN_5},
++    peripherals::{I2C0, I2C1, PIN_8, PIN_9, PIN_14, PIN_15},
+     Peripheral,
+ };
+ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
+@@ -50,8 +50,8 @@ impl<T: Instance> LidarImu<T> {
+ 
+     async fn steal0(addr: u16) -> LidarImu<I2C0> {
+         let i2c = unsafe { I2C0::steal() };
+-        let scl = unsafe { PIN_5::steal() };
+-        let sda = unsafe { PIN_4::steal() };
++        let scl = unsafe { PIN_9::steal() };
++        let sda = unsafe { PIN_8::steal() };
+ 
+         let mut config = Config::default();
+         config.frequency = 400000;
+@@ -59,6 +59,17 @@ impl<T: Instance> LidarImu<T> {
+         LidarImu(I2c::new_async(i2c, scl, sda, Irqs0, config), addr)
+     }
+ 
++    async fn steal1(addr: u16) -> LidarImu<I2C1> {
++        let i2c = unsafe { I2C1::steal() };
++        let scl = unsafe { PIN_15::steal() };
++        let sda = unsafe { PIN_14::steal() };
++
++        let mut config = Config::default();
++        config.frequency = 400000;
++
++        LidarImu(I2c::new_async(i2c, scl, sda, Irqs1, config), addr)
++    }
++
+     async fn init_lidar(&mut self, addr: u16) -> Result<(), Error> {
+         self.0.write_async(addr, [0x26, 200]).await?; // fps
+         Ok(())
+@@ -156,7 +167,7 @@ impl<T: Instance> LidarImu<T> {
+ 
+ #[embassy_executor::task]
+ async fn lidar_imu0_task(mut lidar_imu: LidarImu<I2C0>) {
+-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x10)).await;
++    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x11)).await;
+     if result.is_err() || result.unwrap().is_err() {
+         warn!("Error initialising lidar front");
+         return;
+@@ -168,44 +179,74 @@ async fn lidar_imu0_task(mut lidar_imu: LidarImu<I2C0>) {
+         return;
+     }
+ 
+-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_imu()).await;
++    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x12)).await;
+     if result.is_err() || result.unwrap().is_err() {
+-        warn!("Error initialising imu");
++        warn!("Error initialising lidar left");
+         return;
+     }
+ 
+-    let mut lidar = true;
+-    let mut ticker = Ticker::every(Duration::from_micros(2500));
++    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x10)).await;
++    if result.is_err() || result.unwrap().is_err() {
++        warn!("Error initialising lidar back");
++        return;
++    }
++
++    info!("completed lidar init");
+ 
+     loop {
+-        let instant = Instant::now();
+-        let mut dead = false;
++        // LIDAR_SIGNAL.wait().await;
+ 
+-        if lidar {
+-            lidar = false;
++        if let Ok(Ok((dist, signal))) =
++            with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(0x11)).await
++        {
++            LIDAR_FRONT_SIGNAL.signal((dist, signal));
++            info!("front dist: {}, signal: {}", dist, signal);
++        } else {
++            warn!("Error reading from lidar front");
++        }
+ 
+-            LIDAR_SIGNAL.signal(());
++        if let Ok(Ok((dist, signal))) =
++            with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(0x13)).await
++        {
++            LIDAR_RIGHT_SIGNAL.signal((dist, signal));
++            info!("right dist: {}, signal: {}", dist, signal);
++        } else {
++            warn!("Error reading from lidar right");
++        }
+ 
+-            if let Ok(Ok((dist, signal))) =
+-                with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(0x10)).await
+-            {
+-                LIDAR_FRONT_SIGNAL.signal((dist, signal));
+-            } else {
+-                warn!("Error reading from lidar front");
+-                dead = true;
+-            }
++        if let Ok(Ok((dist, signal))) =
++            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(0x12)).await
++        {
++            LIDAR_LEFT_SIGNAL.signal((dist, signal));
++            info!("left dist: {}, signal: {}", dist, signal);
++        } else {
++            warn!("Error reading from lidar left");
++        }
+ 
+-            if let Ok(Ok((dist, signal))) =
+-                with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(0x13)).await
+-            {
+-                LIDAR_RIGHT_SIGNAL.signal((dist, signal));
+-            } else {
+-                warn!("Error reading from lidar right");
+-                dead = true
+-            }
++        if let Ok(Ok((dist, signal))) =
++            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(0x10)).await
++        {
++            LIDAR_BACK_SIGNAL.signal((dist, signal));
++            info!("back dist: {}, signal: {}", dist, signal);
+         } else {
+-            lidar = true;
+-        };
++            warn!("Error reading from lidar back");
++        }
++    }
++}
++
++#[embassy_executor::task]
++async fn lidar_imu1_task(mut lidar_imu: LidarImu<I2C1>) {
++    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_imu()).await;
++    if result.is_err() || result.unwrap().is_err() {
++        warn!("Error initialising imu");
++        return;
++    }
++
++    let mut ticker = Ticker::every(Duration::from_micros(2500));
++
++    loop {
++        let instant = Instant::now();
++        let mut dead = false;
+ 
+         match with_timeout(Duration::from_millis(2), lidar_imu.read_imu()).await {
+             Ok(Ok(data)) => {
+@@ -231,13 +272,11 @@ async fn lidar_imu0_task(mut lidar_imu: LidarImu<I2C0>) {
+             }
+         }
+ 
+-        info!("{}", instant.elapsed().as_micros());
++        // info!("{}", instant.elapsed().as_micros());
+ 
+         if dead {
+-            lidar_imu = LidarImu::<I2C0>::steal0(IMU_ADDRESS).await;
++            lidar_imu = LidarImu::<I2C0>::steal1(IMU_ADDRESS).await;
+             Timer::after_millis(100).await;
+-            let _ = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x10)).await;
+-            let _ = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x13)).await;
+             let _ = with_timeout(Duration::from_millis(500), lidar_imu.init_imu()).await;
+             ticker.reset();
+         }
+@@ -246,41 +285,6 @@ async fn lidar_imu0_task(mut lidar_imu: LidarImu<I2C0>) {
+     }
+ }
+ 
+-#[embassy_executor::task]
+-async fn lidar_imu1_task(mut lidar_imu: LidarImu<I2C1>) {
+-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x12)).await;
+-    if result.is_err() || result.unwrap().is_err() {
+-        warn!("Error initialising lidar left");
+-        return;
+-    }
+-
+-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x11)).await;
+-    if result.is_err() || result.unwrap().is_err() {
+-        warn!("Error initialising lidar back");
+-        return;
+-    }
+-
+-    loop {
+-        LIDAR_SIGNAL.wait().await;
+-
+-        if let Ok(Ok((dist, signal))) =
+-            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(0x12)).await
+-        {
+-            LIDAR_LEFT_SIGNAL.signal((dist, signal));
+-        } else {
+-            warn!("Error reading from lidar left");
+-        }
+-
+-        if let Ok(Ok((dist, signal))) =
+-            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(0x11)).await
+-        {
+-            LIDAR_BACK_SIGNAL.signal((dist, signal));
+-        } else {
+-            warn!("Error reading from lidar back");
+-        }
+-    }
+-}
+-
+ #[embassy_executor::task]
+ async fn lidar_task() {
+     loop {
+@@ -292,6 +296,9 @@ async fn lidar_task() {
+         )
+         .await;
+ 
++        // info!("front: {:?}, left: {:?}, right: {:?}, back: {:?}", data.0, data.1, data.2, data.3);
++
++
+         if let Some(new_data) = LIDAR_FRONT_SIGNAL.try_take() {
+             data.0 = new_data;
+         }
+@@ -320,11 +327,11 @@ async fn lidar_task() {
+ pub async fn init(
+     spawner: &Spawner,
+     i2c0: I2C0,
+-    scl0: PIN_5,
+-    sda0: PIN_4,
++    scl0: PIN_9,
++    sda0: PIN_8,
+     i2c1: I2C1,
+-    scl1: PIN_3,
+-    sda1: PIN_2,
++    scl1: PIN_15,
++    sda1: PIN_14,
+ ) {
+     info!("Starting lidar imu");
+ 
+diff --git a/soccer-vision/src/main.rs b/soccer-vision/src/main.rs
+index 7e58db4..a3f2797 100644
+--- a/soccer-vision/src/main.rs
++++ b/soccer-vision/src/main.rs
+@@ -36,7 +36,7 @@ async fn core0_task(spawner: Spawner, p: Peripherals) {
+     info!("Starting up core 0");
+ 
+     led::init(&spawner, p.PIO0, p.DMA_CH0, p.PIN_16).await;
+-    lidar_imu::init(&spawner, p.I2C0, p.PIN_5, p.PIN_4, p.I2C1, p.PIN_3, p.PIN_2).await;
++    lidar_imu::init(&spawner, p.I2C0, p.PIN_9, p.PIN_8, p.I2C1, p.PIN_15, p.PIN_14).await;
+     uart::init(&spawner, p.UART0, p.PIN_0, p.PIN_1, p.DMA_CH1, p.DMA_CH2).await;
+ 
+     CORE_SIGNAL.wait().await;
+diff --git a/soccer-vision/src/uart.rs b/soccer-vision/src/uart.rs
+index 60718f7..c2384dd 100644
+--- a/soccer-vision/src/uart.rs
++++ b/soccer-vision/src/uart.rs
+@@ -7,6 +7,7 @@ use embassy_rp::{
+ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+ use embassy_time::Timer;
+ use num_traits::Float;
++use log::{info, warn};
+ 
+ bind_interrupts!(struct Irqs {
+     UART0_IRQ => InterruptHandler<UART0>;
+@@ -45,6 +46,11 @@ async fn uart_tx_task(mut tx: UartTx<'static, UART0, Async>) {
+                 let dis_b = back.0.to_le_bytes();
+                 let sig_b = back.1.to_le_bytes();
+ 
++                info!("front dist: {:?}, sig: {:?}", dis_f, sig_f);
++                info!("left dist: {:?}, sig: {:?}", dis_l, sig_l);
++                info!("right dist: {:?}, sig: {:?}", dis_r, sig_r);
++                info!("back dist: {:?}, sig: {:?}", dis_b, sig_b);
++
+                 let _ = tx
+                     .write(&[
+                         1, dis_f[0], dis_f[1], sig_f[0], sig_f[1], dis_l[0], dis_l[1], sig_l[0],
+@@ -53,6 +59,8 @@ async fn uart_tx_task(mut tx: UartTx<'static, UART0, Async>) {
+                     ])
+                     .await;
+                 let _ = tx.send_break(0).await;
++
++                info!("Sent lidar data");
+             }
+             Command::Positioning { angle } => {
+                 let angle = ((angle * 128.).round() as i16).to_le_bytes();

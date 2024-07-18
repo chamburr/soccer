@@ -199,6 +199,7 @@ async fn strategy_task() {
                 }
                 attack::run(data, &mut state_attack).await;
                 debug_variable!("strategy", "attack");
+                // info!("attack");
             }
             Strategy::Bounds => {
                 if strategy != last_strategy {
@@ -206,6 +207,7 @@ async fn strategy_task() {
                 }
                 bounds::run(data, &mut state_bounds).await;
                 debug_variable!("strategy", "bounds");
+                // info!("bounds");
             }
             Strategy::Clear => {
                 if strategy != last_strategy {
@@ -213,6 +215,7 @@ async fn strategy_task() {
                 }
                 clear::run(data, &mut state_clear).await;
                 debug_variable!("strategy", "clear");
+                // info!("clear");
             }
             Strategy::Defence => {
                 if strategy != last_strategy {
@@ -220,6 +223,7 @@ async fn strategy_task() {
                 }
                 defence::run(data, &mut state_defence).await;
                 debug_variable!("strategy", "defence");
+                // info!("defence");
             }
             Strategy::GetOut => {
                 if strategy != last_strategy {
@@ -227,6 +231,7 @@ async fn strategy_task() {
                 }
                 get_out::run(data, &mut state_get_out).await;
                 debug_variable!("strategy", "get_out");
+                // info!("get_out");
             }
             Strategy::Goalie => {
                 if strategy != last_strategy {
@@ -234,6 +239,7 @@ async fn strategy_task() {
                 }
                 goalie::run(data, &mut state_goalie).await;
                 debug_variable!("strategy", "goalie");
+                // info!("goalie");
             }
             Strategy::NoBall => {
                 if strategy != last_strategy {
@@ -241,9 +247,12 @@ async fn strategy_task() {
                 }
                 no_ball::run(data, &mut state_no_ball).await;
                 debug_variable!("strategy", "no_ball");
+                // info!("no_ball");
             }
             _ => {}
         }
+
+
 
         last_strategy = strategy;
     }

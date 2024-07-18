@@ -36,7 +36,7 @@ async fn core0_task(spawner: Spawner, p: Peripherals) {
     info!("Starting up core 0");
 
     led::init(&spawner, p.PIO0, p.DMA_CH0, p.PIN_16).await;
-    lidar_imu::init(&spawner, p.I2C0, p.PIN_5, p.PIN_4, p.I2C1, p.PIN_3, p.PIN_2).await;
+    lidar_imu::init(&spawner, p.I2C0, p.PIN_9, p.PIN_8, p.I2C1, p.PIN_15, p.PIN_14).await;
     uart::init(&spawner, p.UART0, p.PIN_0, p.PIN_1, p.DMA_CH1, p.DMA_CH2).await;
 
     CORE_SIGNAL.wait().await;

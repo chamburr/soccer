@@ -1,3 +1,4 @@
+use log::info;
 use crate::{
     calibration::{ACC_MISALIGNMENT, ACC_OFFSET, HARD_IRON_OFFSET, SOFT_IRON_MATRIX},
     uart::{Command, UART_CHANNEL},
@@ -116,10 +117,10 @@ async fn fusion_task() {
         recovery_trigger_period: REJECTION_PERIOD,
     });
 
-    while !offset.initialised2 {
-        let data = IMU_SIGNAL.wait().await;
-        offset.update(FusionVector::new(data.gyr.0, data.gyr.1, data.gyr.2));
-    }
+    // while !offset.initialised2 {
+    //     let data = IMU_SIGNAL.wait().await;
+    //     offset.update(FusionVector::new(data.gyr.0, data.gyr.1, data.gyr.2));
+    // }
 
     let acc_offset = FusionVector::new(ACC_OFFSET[0], ACC_OFFSET[1], ACC_OFFSET[2]);
 
@@ -186,18 +187,25 @@ async fn fusion_task() {
         } else {
             fusion.update(gyr, acc, mag, dt);
         }
-
+        // tare_angle = 0.0;
         let angle = clamp_angle(fusion.quaternion.euler().angle.yaw - tare_angle);
-
         if tare_count >= 0 {
             if tare_count == 0 {
-                tare_angle = tare_total / (tare_count as f32);
+                tare_angle = tare_total / (TARE_COUNT as f32);
             } else {
-                tare_total += angle;
+                tare_total += clamp_angle(fusion.quaternion.euler().angle.yaw);
             }
             tare_count -= 1;
+            info!("TARING: AAAAngle: {:?}, tare_angle: {:?}, tare count: {:?}", angle, tare_angle, tare_count);
+
             continue;
         }
+
+        // info!("AAAAngle: {:?}", fusion.quaternion.euler().angle.yaw);
+        // info!("AAAAngle: {:?}, tare_angle: {:?}, tare count: {:?}", angle, tare_angle, tare_count);
+       
+
+
 
         let _ = UART_CHANNEL.try_send(Command::Positioning { angle });
     }

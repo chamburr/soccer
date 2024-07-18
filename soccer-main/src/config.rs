@@ -17,8 +17,8 @@ macro_rules! init_config {
 }
 
 init_config! {
-    started: bool = true,
-    goalie: bool = true,
+    started: bool = false,
+    goalie: bool = false,
     pid_p: f32 = 0.04,
     pid_d: f32 = 0.13,
 }

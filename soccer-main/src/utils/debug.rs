@@ -23,6 +23,7 @@ macro_rules! debug_variable {
         let value = heapless::format!("{}", $value).unwrap_or("Unknown".try_into().unwrap());
         let mut variables = crate::utils::debug::VARIABLES.lock().await;
         let _ = variables.insert($name, value);
+        info!("{}: {}", $name, $value);
     }};
 }
 

@@ -21,6 +21,7 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::task]
 async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'static>) {
+    info!("camera task started");
     let mut buf = [0; 32];
 
     for _ in 0..10 {
@@ -30,11 +31,14 @@ async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'s
     let mut timeouts = 0;
 
     loop {
+        // info!("camera loop");
         match with_timeout(Duration::from_millis(50), rx.read_to_break(&mut buf)).await {
             Ok(Ok(len)) => {
                 match buf[0] {
                     1 => {
                         if len != 9 {
+                            warn!("Received bad camera data ({}): {}", len, buf);
+                            
                             continue;
                         }
 
@@ -43,12 +47,15 @@ async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'s
                         let goal_angle = (u16::from_le_bytes([buf[5], buf[6]]) as f32) / 128.;
                         let goal_dist = (u16::from_le_bytes([buf[7], buf[8]]) as f32) / 128.;
 
+                        info!("Received camera data: angle {}, dist {}", angle, dist);
+
                         CAMERA_SIGNAL.signal(CameraData {
                             angle,
                             dist,
                             goal_angle,
                             goal_dist,
                         });
+
                     }
                     _ => {
                         if len != 0 {

@@ -9,7 +9,7 @@ use embassy_rp::{
     bind_interrupts,
     i2c::{Async, Config, Error, I2c, Instance, InterruptHandler, SclPin, SdaPin},
     interrupt::typelevel::Binding,
-    peripherals::{I2C0, I2C1, PIN_2, PIN_3, PIN_4, PIN_5},
+    peripherals::{I2C0, I2C1, PIN_8, PIN_9, PIN_14, PIN_15},
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
@@ -17,6 +17,12 @@ use embassy_time::{with_timeout, Duration, Ticker, Timer};
 use log::{info, warn};
 
 const IMU_ADDRESS: u16 = 0x68;
+
+const LIDAR_RIGHT_ADDRESS: u16 = 0x10;
+const LIDAR_LEFT_ADDRESS: u16 = 0x12;
+const LIDAR_BACK_ADDRESS: u16 = 0x11;
+const LIDAR_FRONT_ADDRESS: u16 = 0x13;
+
 
 static LIDAR_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
 static LIDAR_FRONT_SIGNAL: Signal<CriticalSectionRawMutex, (u16, u16)> = Signal::new();
@@ -50,13 +56,24 @@ impl<T: Instance> LidarImu<T> {
 
     async fn steal0(addr: u16) -> LidarImu<I2C0> {
         let i2c = unsafe { I2C0::steal() };
-        let scl = unsafe { PIN_5::steal() };
-        let sda = unsafe { PIN_4::steal() };
+        let scl = unsafe { PIN_9::steal() };
+        let sda = unsafe { PIN_8::steal() };
 
         let mut config = Config::default();
         config.frequency = 400000;
 
         LidarImu(I2c::new_async(i2c, scl, sda, Irqs0, config), addr)
+    }
+
+    async fn steal1(addr: u16) -> LidarImu<I2C1> {
+        let i2c = unsafe { I2C1::steal() };
+        let scl = unsafe { PIN_15::steal() };
+        let sda = unsafe { PIN_14::steal() };
+
+        let mut config = Config::default();
+        config.frequency = 400000;
+
+        LidarImu(I2c::new_async(i2c, scl, sda, Irqs1, config), addr)
     }
 
     async fn init_lidar(&mut self, addr: u16) -> Result<(), Error> {
@@ -156,56 +173,88 @@ impl<T: Instance> LidarImu<T> {
 
 #[embassy_executor::task]
 async fn lidar_imu0_task(mut lidar_imu: LidarImu<I2C0>) {
-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x10)).await;
+    Timer::after_millis(100).await;
+
+    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(LIDAR_FRONT_ADDRESS)).await;
     if result.is_err() || result.unwrap().is_err() {
         warn!("Error initialising lidar front");
         return;
     }
 
-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x13)).await;
+    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(LIDAR_RIGHT_ADDRESS)).await;
     if result.is_err() || result.unwrap().is_err() {
         warn!("Error initialising lidar right");
         return;
     }
 
+    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(LIDAR_LEFT_ADDRESS)).await;
+    if result.is_err() || result.unwrap().is_err() {
+        warn!("Error initialising lidar left");
+        return;
+    }
+
+    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(LIDAR_BACK_ADDRESS)).await;
+    if result.is_err() || result.unwrap().is_err() {
+        warn!("Error initialising lidar back");
+        return;
+    }
+
+    info!("completed lidar init");
+
+    loop {
+        // LIDAR_SIGNAL.wait().await;
+
+        if let Ok(Ok((dist, signal))) =
+            with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(LIDAR_FRONT_ADDRESS)).await
+        {
+            LIDAR_FRONT_SIGNAL.signal((dist, signal));
+            // info!("front dist: {}, signal: {}", dist, signal);
+        } else {
+            warn!("Error reading from lidar front");
+        }
+
+        if let Ok(Ok((dist, signal))) =
+            with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(LIDAR_RIGHT_ADDRESS)).await
+        {
+            LIDAR_RIGHT_SIGNAL.signal((dist, signal));
+            // info!("right dist: {}, signal: {}", dist, signal);
+        } else {
+            warn!("Error reading from lidar right");
+        }
+
+        if let Ok(Ok((dist, signal))) =
+            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(LIDAR_LEFT_ADDRESS)).await
+        {
+            LIDAR_LEFT_SIGNAL.signal((dist, signal));
+            // info!("left dist: {}, signal: {}", dist, signal);
+        } else {
+            warn!("Error reading from lidar left");
+        }
+
+        if let Ok(Ok((dist, signal))) =
+            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(LIDAR_BACK_ADDRESS)).await
+        {
+            LIDAR_BACK_SIGNAL.signal((dist, signal));
+            // info!("back dist: {}, signal: {}", dist, signal);
+        } else {
+            warn!("Error reading from lidar back");
+        }
+    }
+}
+
+#[embassy_executor::task]
+async fn lidar_imu1_task(mut lidar_imu: LidarImu<I2C1>) {
     let result = with_timeout(Duration::from_millis(500), lidar_imu.init_imu()).await;
     if result.is_err() || result.unwrap().is_err() {
         warn!("Error initialising imu");
         return;
     }
 
-    let mut lidar = true;
     let mut ticker = Ticker::every(Duration::from_micros(2500));
 
     loop {
         let instant = Instant::now();
         let mut dead = false;
-
-        if lidar {
-            lidar = false;
-
-            LIDAR_SIGNAL.signal(());
-
-            if let Ok(Ok((dist, signal))) =
-                with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(0x10)).await
-            {
-                LIDAR_FRONT_SIGNAL.signal((dist, signal));
-            } else {
-                warn!("Error reading from lidar front");
-                dead = true;
-            }
-
-            if let Ok(Ok((dist, signal))) =
-                with_timeout(Duration::from_millis(1), lidar_imu.read_lidar(0x13)).await
-            {
-                LIDAR_RIGHT_SIGNAL.signal((dist, signal));
-            } else {
-                warn!("Error reading from lidar right");
-                dead = true
-            }
-        } else {
-            lidar = true;
-        };
 
         match with_timeout(Duration::from_millis(2), lidar_imu.read_imu()).await {
             Ok(Ok(data)) => {
@@ -231,53 +280,16 @@ async fn lidar_imu0_task(mut lidar_imu: LidarImu<I2C0>) {
             }
         }
 
-        info!("{}", instant.elapsed().as_micros());
+        // info!("{}", instant.elapsed().as_micros());
 
         if dead {
-            lidar_imu = LidarImu::<I2C0>::steal0(IMU_ADDRESS).await;
+            lidar_imu = LidarImu::<I2C0>::steal1(IMU_ADDRESS).await;
             Timer::after_millis(100).await;
-            let _ = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x10)).await;
-            let _ = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x13)).await;
             let _ = with_timeout(Duration::from_millis(500), lidar_imu.init_imu()).await;
             ticker.reset();
         }
 
         ticker.next().await;
-    }
-}
-
-#[embassy_executor::task]
-async fn lidar_imu1_task(mut lidar_imu: LidarImu<I2C1>) {
-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x12)).await;
-    if result.is_err() || result.unwrap().is_err() {
-        warn!("Error initialising lidar left");
-        return;
-    }
-
-    let result = with_timeout(Duration::from_millis(500), lidar_imu.init_lidar(0x11)).await;
-    if result.is_err() || result.unwrap().is_err() {
-        warn!("Error initialising lidar back");
-        return;
-    }
-
-    loop {
-        LIDAR_SIGNAL.wait().await;
-
-        if let Ok(Ok((dist, signal))) =
-            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(0x12)).await
-        {
-            LIDAR_LEFT_SIGNAL.signal((dist, signal));
-        } else {
-            warn!("Error reading from lidar left");
-        }
-
-        if let Ok(Ok((dist, signal))) =
-            with_timeout(Duration::from_millis(5), lidar_imu.read_lidar(0x11)).await
-        {
-            LIDAR_BACK_SIGNAL.signal((dist, signal));
-        } else {
-            warn!("Error reading from lidar back");
-        }
     }
 }
 
@@ -291,6 +303,9 @@ async fn lidar_task() {
             LIDAR_BACK_SIGNAL.wait(),
         )
         .await;
+
+        // info!("front: {:?}, left: {:?}, right: {:?}, back: {:?}", data.0, data.1, data.2, data.3);
+
 
         if let Some(new_data) = LIDAR_FRONT_SIGNAL.try_take() {
             data.0 = new_data;
@@ -320,11 +335,11 @@ async fn lidar_task() {
 pub async fn init(
     spawner: &Spawner,
     i2c0: I2C0,
-    scl0: PIN_5,
-    sda0: PIN_4,
+    scl0: PIN_9,
+    sda0: PIN_8,
     i2c1: I2C1,
-    scl1: PIN_3,
-    sda1: PIN_2,
+    scl1: PIN_15,
+    sda1: PIN_14,
 ) {
     info!("Starting lidar imu");
 

@@ -3,6 +3,7 @@
 #![feature(const_option, impl_trait_in_assoc_type, type_alias_impl_trait)]
 #![allow(static_mut_refs)]
 
+use embassy_time::Timer;
 use crate::peripherals::{get_peripherals, Peripherals0, Peripherals1};
 use core::panic::PanicInfo;
 use cortex_m_rt::ExceptionFrame;
@@ -49,6 +50,17 @@ async fn core0_task(spawner: Spawner, p: Peripherals0) {
     hardware::camera::init(&spawner, p.camera).await;
     hardware::motor::init(&spawner, p.motor).await;
     hardware::temts::init(&spawner, p.temts).await;
+    info!("Waiting to start");
+
+    let mut button = p.button.BOOTSEL;
+    while !config::get_config!(started) {
+        if button.is_pressed() {
+            utils::start().await;
+            info!("Started");
+        }
+            info!("Waiting to start");
+        Timer::after_millis(10).await;
+    }
 }
 
 #[embassy_executor::task]

@@ -15,8 +15,9 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal}
 use num_traits::Float;
 use pid::Pid;
 
-const MOTOR_MIN: f32 = 26.;
-const MOTOR_MIN_FINAL: f32 = 27.;
+const SPEED_MULTIPLIER: f32 = 0.3;
+const MOTOR_MIN: f32 = 13.;
+const MOTOR_MIN_FINAL: f32 = 14.;
 const MOTOR_ANGLE_RATIO: f32 = 0.2;
 const MOTOR_POSITION_RATIO: f32 = 0.8;
 const NO_COORDINATE_MAX: f32 = 0.5;
@@ -27,7 +28,7 @@ pub static SPEED_ANGLE_SIGNAL: Signal<CriticalSectionRawMutex, (f32, f32)> = Sig
 pub static ROTATION_SIGNAL: Signal<CriticalSectionRawMutex, f32> = Signal::new();
 
 pub fn drive(speed: f32, angle: f32, rotation: f32) {
-    let angle = clamp_angle(45. - angle).to_radians();
+    let angle = clamp_angle(45. + angle).to_radians();
     let speed = speed * MOTOR_POSITION_RATIO * (255. - MOTOR_MIN);
 
     let (sin, cos) = angle.sin_cos();
@@ -67,6 +68,11 @@ pub fn drive(speed: f32, angle: f32, rotation: f32) {
         speed_br = 0.;
     }
 
+    speed_fr *= SPEED_MULTIPLIER;
+    speed_fl *= SPEED_MULTIPLIER;
+    speed_br *= SPEED_MULTIPLIER;
+    speed_bl *= SPEED_MULTIPLIER;
+
     MOTOR_SIGNAL.signal(MotorData {
         fl: speed_fl.round() as i16,
         fr: speed_fr.round() as i16,
@@ -89,7 +95,8 @@ async fn speed_angle_task() {
         }
 
         let mut pid = Pid::new(0., 1.);
-        pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
+        // pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
+        pid.p(get_config!(pid_p), 1.).d(get_config!(pid_d), 1.);
 
         loop {
             match select(COORDINATE_SIGNAL.wait(), subscriber.next_message()).await {
@@ -144,7 +151,9 @@ async fn speed_angle_task() {
                     }
 
                     SPEED_ANGLE_SIGNAL.signal((speed, angle));
-                    debug_variable!("pid speed", speed);
+                    // SPEED_ANGLE_SIGNAL.signal((speed, ));
+
+                    // info!("pid speed {}", speed);
                     debug_variable!("pid angle", angle);
                 }
             }
@@ -191,6 +200,7 @@ async fn rotation_task() {
 #[embassy_executor::task]
 async fn drive_task() {
     let (mut speed, mut angle) = SPEED_ANGLE_SIGNAL.wait().await;
+
     let mut rotation = ROTATION_SIGNAL.wait().await;
 
     loop {
@@ -198,6 +208,11 @@ async fn drive_task() {
             Either::First(data) => (speed, angle) = data,
             Either::Second(data) => rotation = data,
         }
+
+        // speed = 0.5;
+        // angle = 0.;
+
+        // info!("speed: {}", speed);
 
         drive(speed, angle, rotation);
     }

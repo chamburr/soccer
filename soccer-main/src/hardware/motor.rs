@@ -47,17 +47,29 @@ async fn motor_task(
     mut motor_br: Motor<PWM_CH4>,
 ) {
     loop {
-        let data = MOTOR_SIGNAL.wait().await;
+        let data = MOTOR_SIGNAL.wait().await; // ISSUE: may hog cpu
 
-        motor_fl.set_speed(data.fl);
-        motor_fr.set_speed(data.fr);
-        motor_bl.set_speed(data.bl);
-        motor_br.set_speed(data.br);
+        motor_fl.set_speed(-data.fl);
+        motor_fr.set_speed(-data.fr);
+        motor_bl.set_speed(-data.bl);
+        motor_br.set_speed(-data.br);
+
+        // test
+        // info!("running motors");
+        // motor_fl.set_speed(20);
+        // motor_fr.set_speed(20);
+        // motor_bl.set_speed(20);
+        // motor_br.set_speed(20);
     }
 }
 
 pub async fn init(spawner: &Spawner, p: PeripheralsMotor) {
     info!("Starting motor");
+
+    // front right = 6, 7
+    // back right = 8, 9
+    // back left = 10, 11
+    // front left = 14, 15
 
     let motor_fl = Motor::new(p.PWM_CH7, p.PIN_14, p.PIN_15);
     let motor_fr = Motor::new(p.PWM_CH3, p.PIN_6, p.PIN_7);
