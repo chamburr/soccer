@@ -49,12 +49,14 @@ pub async fn run(data: Data, state: &mut AttackState) {
 
     HEADING_SIGNAL.signal(0.);
 
-    if captured || (y > by && y < by + BALLCAP_DISTANCE && (x - bx).abs() < BALLCAP_WIDTH / 2.) {
+    // info!("{}", y -by);
+
+    if captured || (y > by && y < by + 11. && (x - bx).abs() < BALLCAP_WIDTH / 2.) {
         state.last_captured = Instant::now();
     }
 
     if state.last_captured.elapsed().as_millis() < CAPTURED_DURATION {
-        info!("attack reached");
+        // info!("attack reached");
 
         if !state.aligned {
             if (x - bx).abs() < ALIGNED_THRESHOLD {
@@ -84,7 +86,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
                 * GRADUAL_CHANGE)
             .min(((y - FIELD_MARGIN_Y) / cos).max(0.));
 
-        info!("attack change, {}", change);
+        // info!("attack change, {}", change);
 
         let new_x = x + change * sin;
         let new_y = y - change * cos;
@@ -99,7 +101,7 @@ pub async fn run(data: Data, state: &mut AttackState) {
 
     // info!("attack reached");
 
-    let (new_x, new_y);
+    let (mut new_x, mut new_y);
 
     if y < by {
         state.moving_back = true;
@@ -111,12 +113,12 @@ pub async fn run(data: Data, state: &mut AttackState) {
                 && (x - bx).abs() < CLEARANCE_X / 2.
                 && y < by + CLEARANCE_Y / 2.))
     {
-        info!("attack case 1");
+        // info!("attack case 1");
 
-        info!("{}", (y < by + BALLCAP_DISTANCE / 3.));
-        info!("{} {} {}",((x - bx).abs() > BALLCAP_WIDTH / 2. + 5.), (x - bx).abs() < CLEARANCE_X / 2., y < by + CLEARANCE_Y / 2.);
+        // info!("{}", (y < by + BALLCAP_DISTANCE / 3.));
+        // info!("{} {} {}",((x - bx).abs() > BALLCAP_WIDTH / 2. + 5.), (x - bx).abs() < CLEARANCE_X / 2., y < by + CLEARANCE_Y / 2.);
 
-        info!("x {} y {}", x, y);
+        // info!("x {} y {}", x, y);
 
         new_x = if ok && bx < FIELD_MARGIN + CLEARANCE_X + 10. {
             bx + (CLEARANCE_X / 2. + 5.)
@@ -135,12 +137,13 @@ pub async fn run(data: Data, state: &mut AttackState) {
 
         state.moving_back = true;
     } else { // if ball is in front
+
         if state.moving_back {
             state.moving_back = false;
             state.last_moving_back = Instant::now();
         }
 
-        info!("attack case 2");
+        // info!("attack case 2");
 
         let aligning = state.last_aligning.elapsed().as_millis();
 
@@ -150,20 +153,26 @@ pub async fn run(data: Data, state: &mut AttackState) {
         new_y = if (aligning > ALIGNING_DURATION && aligning < ALIGNING_THRESHOLD)
             || (x - bx).abs() < BALLCAP_WIDTH / 2. // actual pushing
         {
-            (by + BALLCAP_DISTANCE).min(y - 3.)
+            (by + BALLCAP_DISTANCE).min(y - 5.)
         } else { // aligning
             if aligning > ALIGNING_THRESHOLD {
                 state.last_aligning = Instant::now();
             }
-            by + BALLCAP_DISTANCE + 3.
+            by + BALLCAP_DISTANCE + 10. // increase me to slow down as it approaches ball
         };
         if (aligning > ALIGNING_DURATION && aligning < ALIGNING_THRESHOLD)
             || (x - bx).abs() < BALLCAP_WIDTH / 2. // actual pushing
         {
-            info!("pushing");
+            // info!("pushing");
+            // new_x = x;
+            // new_y = y;
         } else { // aligning
-            info!("alinging");
+            // info!("alinging");
+            
         };
+
+
+
     }
 
     COORDINATE_SIGNAL.signal((new_x, new_y));

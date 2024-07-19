@@ -14,12 +14,14 @@ const GAIN: f32 = 1.;
 const REJECTION_ACC: f32 = 0.01;
 const REJECTION_MAG: f32 = 1.5;
 const REJECTION_PERIOD: i32 = 0;
-const TARE_COUNT: u32 = 500;
+const TARE_COUNT: i32 = 1000;
 
 const MAGNETOMETER_MAX: f32 = 1500.;
 const MAGNETOMETER_GYR_MAX: f32 = 25.;
+const IGNORE_TARE_COUNT: i32 = 200;
 
 pub static IMU_SIGNAL: Signal<CriticalSectionRawMutex, ImuData> = Signal::new();
+pub static TARE_SIGNAL: Signal<CriticalSectionRawMutex, bool> = Signal::new();
 
 pub struct ImuData {
     pub acc: (f32, f32, f32),
@@ -191,8 +193,12 @@ async fn fusion_task() {
         let angle = clamp_angle(fusion.quaternion.euler().angle.yaw - tare_angle);
         if tare_count >= 0 {
             if tare_count == 0 {
-                tare_angle = tare_total / (TARE_COUNT as f32);
+                tare_angle = tare_total / ((TARE_COUNT - IGNORE_TARE_COUNT) as f32);
             } else {
+                if tare_count <= IGNORE_TARE_COUNT {
+                    tare_count -= 1;
+                    continue;
+                }
                 tare_total += clamp_angle(fusion.quaternion.euler().angle.yaw);
             }
             tare_count -= 1;
@@ -204,6 +210,13 @@ async fn fusion_task() {
         // info!("AAAAngle: {:?}", fusion.quaternion.euler().angle.yaw);
         // info!("AAAAngle: {:?}, tare_angle: {:?}, tare count: {:?}", angle, tare_angle, tare_count);
        
+
+        if TARE_SIGNAL.signaled() {
+            TARE_SIGNAL.reset();
+            tare_angle = 0.;
+            tare_total = 0.;
+            tare_count = TARE_COUNT as i32;
+        }
 
 
 

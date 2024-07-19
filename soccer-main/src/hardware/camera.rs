@@ -47,7 +47,7 @@ async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'s
                         let goal_angle = (u16::from_le_bytes([buf[5], buf[6]]) as f32) / 128.;
                         let goal_dist = (u16::from_le_bytes([buf[7], buf[8]]) as f32) / 128.;
 
-                        info!("Received camera data: angle {}, dist {}", angle, dist);
+                        // info!("Received camera data: angle {}, dist {}", angle, dist);
 
                         CAMERA_SIGNAL.signal(CameraData {
                             angle,
@@ -76,6 +76,7 @@ async fn camera_task(mut rx: UartRx<'static, UART0, Async>, mut reset: Output<'s
             Err(_) => {
                 warn!("Timed out receiving camera data");
                 timeouts += 1;
+                // info!("AM I STUCK")
             }
         }
 
@@ -100,7 +101,7 @@ pub async fn init(spawner: &Spawner, p: PeripheralsCamera) {
     config.baudrate = 115200;
 
     let rx = UartRx::new(p.UART0, p.PIN_17, Irqs, p.DMA_CH2, config);
-    let reset = Output::new(p.PIN_3, Level::High);
+    let reset = Output::new(p.PIN_27, Level::High);
 
     spawner.must_spawn(camera_task(rx, reset));
 }

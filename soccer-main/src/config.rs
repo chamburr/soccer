@@ -19,8 +19,12 @@ macro_rules! init_config {
 init_config! {
     started: bool = false,
     goalie: bool = false,
-    pid_p: f32 = 0.04,
-    pid_d: f32 = 0.13,
+    // rotation
+    pid_p: f32 = 0.2, // .08 is oks
+    pid_d: f32 = 0.07,
+    // movement
+    pid2_p: f32 = 0.10, // .08 is oks
+    pid2_d: f32 = 0.1,
 }
 
 macro_rules! get_config {

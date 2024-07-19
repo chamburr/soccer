@@ -16,12 +16,14 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal}
 use log::info;
 use static_cell::StaticCell;
 
+
 mod calibration;
 mod fusion;
 mod led;
 mod lidar_imu;
 mod logger;
 mod uart;
+mod button;
 
 static CORE_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
 
@@ -38,6 +40,7 @@ async fn core0_task(spawner: Spawner, p: Peripherals) {
     led::init(&spawner, p.PIO0, p.DMA_CH0, p.PIN_16).await;
     lidar_imu::init(&spawner, p.I2C0, p.PIN_9, p.PIN_8, p.I2C1, p.PIN_15, p.PIN_14).await;
     uart::init(&spawner, p.UART0, p.PIN_0, p.PIN_1, p.DMA_CH1, p.DMA_CH2).await;
+    button::init(&spawner, p.PIN_2.into()).await;
 
     CORE_SIGNAL.wait().await;
     info!("Starting up core 1");
@@ -46,7 +49,6 @@ async fn core0_task(spawner: Spawner, p: Peripherals) {
 #[embassy_executor::task]
 async fn core1_task(spawner: Spawner) {
     CORE_SIGNAL.signal(());
-
     fusion::init(&spawner).await;
 }
 

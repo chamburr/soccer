@@ -47,6 +47,7 @@ async fn motor_task(
     mut motor_br: Motor<PWM_CH4>,
 ) {
     loop {
+        // info!("AM I STUCK");
         let data = MOTOR_SIGNAL.wait().await; // ISSUE: may hog cpu
 
         motor_fl.set_speed(-data.fl);

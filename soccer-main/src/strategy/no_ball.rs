@@ -4,7 +4,7 @@ use crate::{
 };
 use num_traits::Float;
 
-const NO_BALL_DISTANCE: f32 = 35.;
+const NO_BALL_DISTANCE: f32 = 20.; // CHANGE ME
 const GOALIE_NO_BALL_DISTANCE: f32 = 5.;
 const CHECK_DISTANCE: f32 = 5.;
 const DISTANCE_THRESHOLD_Y: f32 = 10.;

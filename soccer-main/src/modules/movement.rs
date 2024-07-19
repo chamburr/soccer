@@ -15,14 +15,14 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal}
 use num_traits::Float;
 use pid::Pid;
 
-const SPEED_MULTIPLIER: f32 = 0.3;
+const SPEED_MULTIPLIER: f32 = 0.35;
 const MOTOR_MIN: f32 = 13.;
 const MOTOR_MIN_FINAL: f32 = 14.;
 const MOTOR_ANGLE_RATIO: f32 = 0.2;
 const MOTOR_POSITION_RATIO: f32 = 0.8;
 const NO_COORDINATE_MAX: f32 = 0.5;
 
-const STRIKER_DISTANCE: f32 = 30.;
+const STRIKER_DISTANCE: f32 = 10.;
 
 pub static SPEED_ANGLE_SIGNAL: Signal<CriticalSectionRawMutex, (f32, f32)> = Signal::new();
 pub static ROTATION_SIGNAL: Signal<CriticalSectionRawMutex, f32> = Signal::new();
@@ -95,8 +95,8 @@ async fn speed_angle_task() {
         }
 
         let mut pid = Pid::new(0., 1.);
-        // pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
-        pid.p(get_config!(pid_p), 1.).d(get_config!(pid_d), 1.);
+        pid.p(get_config!(pid2_p), 1.).d(get_config!(pid2_d), 1.);
+        // pid.p(get_config!(pid_p), 1.).d(get_config!(pid_d), 1.);
 
         loop {
             match select(COORDINATE_SIGNAL.wait(), subscriber.next_message()).await {
@@ -123,7 +123,7 @@ async fn speed_angle_task() {
                                 target.0.clamp(FIELD_MARGIN, FIELD_WIDTH - FIELD_MARGIN),
                                 target.1.clamp(FIELD_MARGIN_Y, goalie_y),
                             )
-                        } else {
+                        } else { // target x out of bounds
                             let goalie_y = if !goalie {
                                 FIELD_LENGTH - FIELD_MARGIN_Y - STRIKER_DISTANCE
                             } else {

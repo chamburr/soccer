@@ -1,10 +1,11 @@
 use crate::{
     modules::HEADING_SIGNAL,
-    strategy::{Data, CLEARANCE_Y, COORDINATE_SIGNAL},
+    strategy::{Data, COORDINATE_SIGNAL},
 };
 use embassy_time::Instant;
 
 const LAST_PUSH_THRESHOLD: u64 = 100;
+const CLEARANCE_Y_TO_BALL: f32 = 15.;
 
 pub struct DefenceState {
     pub last_push: Instant,
@@ -31,6 +32,6 @@ pub async fn run(data: Data, state: &mut DefenceState) {
     if state.last_push.elapsed().as_millis() < LAST_PUSH_THRESHOLD {
         COORDINATE_SIGNAL.signal((bx, by + 1.5));
     } else {
-        COORDINATE_SIGNAL.signal((bx, by - CLEARANCE_Y - 2.));
+        COORDINATE_SIGNAL.signal((bx, by - CLEARANCE_Y_TO_BALL - 2.));
     }
 }

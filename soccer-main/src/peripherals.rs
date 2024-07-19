@@ -27,12 +27,17 @@ make_peripherals! {
 
 make_peripherals! {
     PeripheralsButton,
-    (BOOTSEL)
+    (BOOTSEL, PIN_5)
+}
+
+make_peripherals! {
+    PeripheralsModule,
+    (PIN_22)
 }
 
 make_peripherals! {
     PeripheralsCamera,
-    (UART0, PIN_3, PIN_17, DMA_CH2)
+    (UART0, PIN_27, PIN_17, DMA_CH2)
 }
 
 make_peripherals! {
@@ -52,7 +57,7 @@ make_peripherals! {
 
 make_peripherals! {
     PeripheralsTemts,
-    (PIN_4, PIN_5, PIN_22, PIN_26, PIN_27)
+    (PIN_0, PIN_1, PIN_2, PIN_3, PIN_4)
 }
 
 make_peripherals! {
@@ -69,6 +74,7 @@ pub struct Peripherals0 {
     pub network: PeripheralsNetwork,
     pub temts: PeripheralsTemts,
     pub uart: PeripheralsUart,
+    pub module:PeripheralsModule,
 }
 
 pub struct Peripherals1 {}
@@ -85,6 +91,7 @@ pub fn get_peripherals(p: Peripherals) -> (CORE1, Peripherals0, Peripherals1) {
             network: peripherals_network!(p),
             temts: peripherals_temts!(p),
             uart: peripherals_uart!(p),
+            module: peripherals_module!(p),
         },
         Peripherals1 {},
     )

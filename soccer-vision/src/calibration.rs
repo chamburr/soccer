@@ -25,6 +25,14 @@ pub const SOFT_IRON_MATRIX: [[f32; 3]; 3] = [
     [-0.001, -0.025, 3.018],
 ];
 
+// RED NEW
+// pub const HARD_IRON_OFFSET: [f32; 3] = [-271.850, -169.680, 114.070];
+// pub const SOFT_IRON_MATRIX: [[f32; 3]; 3] = [
+//     [3.283, 0.036, -0.008],
+//     [0.036, 3.016, 0.001],
+//     [-0.008, 0.001, 3.211],
+// ];
+
 // RED
 // pub const HARD_IRON_OFFSET: [f32; 3] = [-65.740, -57.750, 203.720];
 // pub const SOFT_IRON_MATRIX: [[f32; 3]; 3] = [

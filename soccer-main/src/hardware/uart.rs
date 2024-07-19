@@ -20,11 +20,11 @@ bind_interrupts!(struct Irqs {
 #[embassy_executor::task]
 async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
     let mut buf = [0; 32];
-    info!("running task");
+    info!("Started RX task");
 
     for _ in 0..10 {
         let _ = with_timeout(Duration::from_millis(10), rx.read_to_break(&mut buf)).await;
-        info!("reading data");
+        info!("Reading data");
     }
 
     loop {
@@ -58,7 +58,6 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
                     // info!("left dist: {}, sig: {}", dis_l, sig_l);
                     // info!("right dist: {}, sig: {}", dis_r, sig_r);
                     // info!("back dist: {}, sig: {}", dis_b, sig_b);
-
                 }
                 2 => {
                     // info!("uart case 2");
@@ -76,8 +75,6 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
                     });
 
                     // info!("angle: {}", angle);
-                    
-
                 }
                 _ => {
                     if len != 0 {
@@ -100,20 +97,20 @@ async fn uart_rx_task(mut rx: UartRx<'static, UART1, Async>) {
 }
 
 #[embassy_executor::task]
-async fn uart_tx_task(tx: UartTx<'static, UART1, Async>) {
-    // let _ = tx.write(&[2, 1, 2, 3, 4]).await;
-    // let _ = tx.send_break(0).await;
-    info!("tx task");
+async fn uart_tx_task(mut tx: UartTx<'static, UART1, Async>) {
+    let _ = tx.write(&[2, 1, 2, 3, 4]).await;
+    let _ = tx.send_break(0).await;
+    info!("Started TX task");
 
-    // Timer::after_millis(500).await; // wait for reset
+    Timer::after_millis(500).await; // wait for reset
 
-    // loop {
-    //     let _ = tx.write(&[2, 1, 2, 3, 4]).await;
-    //     let _ = tx.send_break(0).await;
-    //     // info!("tx loop");
+    loop {
+        // let _ = tx.write(&[2, 1, 2, 3, 4]).await;
+        // let _ = tx.send_break(0).await;
+        // info!("tx loop");
 
-    //     Timer::after_micros(250).await;
-    // }
+        // Timer::after_micros(250).await;
+    }
 }
 
 pub async fn init(spawner: &Spawner, p: PeripheralsUart) {
@@ -126,11 +123,8 @@ pub async fn init(spawner: &Spawner, p: PeripheralsUart) {
     let uart = Uart::new(
         p.UART1, p.PIN_20, p.PIN_21, Irqs, p.DMA_CH3, p.DMA_CH4, config,
     );
-    // let (_, rx) = uart.split();
     let (tx, rx) = uart.split();
 
     spawner.must_spawn(uart_rx_task(rx));
-    info!("spawn rx?");
-    spawner.must_spawn(uart_tx_task(tx));
-    info!("spawn tx?");
+    // spawner.must_spawn(uart_tx_task(tx));
 }

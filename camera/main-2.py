@@ -7,7 +7,7 @@ sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
 
 centre_x = 162
-centre_y = 110
+centre_y = 120
 
 sensor.set_windowing((centre_x-120, 0, 240, 240))
 sensor.set_gainceiling(128)
@@ -16,7 +16,7 @@ sensor.set_auto_whitebal(False) # must be turned off for color tracking
 
 sensor.skip_frames(time=500)
 sensor.set_auto_exposure(False, exposure_us=8000)
-sensor.set_auto_gain(False, gain_db = 10)
+sensor.set_auto_gain(False, gain_db = 5)
 sensor.set_auto_whitebal(False)
 sensor.set_framebuffers(3)
 
@@ -29,16 +29,18 @@ led3 = pyb.LED(3)
 led2.on()
 #led3.on()
 
-centre_x = 124
-centre_y = 119
+centre_x = 130
+centre_y = 115
 
 # from sci centre
-thresh_ball = (0, 100, 20, 58, 39, 61)
-thresh_ball = (8, 97, 5, 54, 36, 42)
-thresh_ball = (13, 62, 33, 62, 17, 75) # ground floor
+#thresh_ball = (0, 100, 20, 58, 39, 61)
+#thresh_ball = (8, 97, 5, 54, 36, 42)
+#thresh_ball = (13, 62, 33, 62, 17, 75) # ground floor
 # old thresh 6/4 (54, 99, 7, 72, 11, 73) # (40, 68, 14, 57, 9, 59)
 # old ball threshes (49, 69, 7, 55, 0, 29) # (45, 69, 3, 60, 19, 65)
-thresh_ball = (10, 80, 29, 66, 38, 69)
+#thresh_ball = (10, 100, 4, 65, 31, 69)
+#thresh_ball = (0, 100, 3, 127, 23, 88)
+thresh_ball = (42, 83, 25, 67, 15, 74)
 thresh_yellow_goal = (39, 100, -24, 3, 35, 67) # (63, 81, -18, 8, 30, 67)
 thresh_blue_goal = (0, 100, -10, 0, -35, -10) # (57, 75, -30, 3, -35, -19) # (49, 58, -29, 3, -34, -10)
 
@@ -118,7 +120,7 @@ while True:
 
     if (use_blue and len(blue_goal)>0):
         led2.off()
-        led3.on()
+#        led3.on()
         # print("blue goal")
         bg = max(blue_goal, key = lambda bg:bg.pixels())
         img.draw_rectangle(bg.rect())
@@ -140,7 +142,7 @@ while True:
 
     if ((not use_blue) and len(yellow_goal)>0):
         led2.off()
-        led3.on()
+#        led3.on()
         # print("yellow goal")
         yg = max(yellow_goal, key = lambda yg:yg.pixels())
         img.draw_rectangle(yg.rect())

@@ -1,3 +1,4 @@
+use crate::modules::HEADING_SIGNAL;
 use crate::{
     config::get_config,
     constants::{
@@ -158,6 +159,7 @@ async fn strategy_task() {
         } else if ok
             && (by > y || (by + BALLCAP_DISTANCE > y && (x - bx).abs() > BALLCAP_WIDTH / 2.))
             && by > FIELD_LENGTH - FIELD_MARGIN_Y - CLEARANCE_Y - striker_distance
+            && (by > FIELD_LENGTH - 70.)
         {
             strategy = Strategy::Defence;
         } else {
@@ -177,7 +179,7 @@ async fn strategy_task() {
             }
         }
 
-        if lines.0 || lines.1 || lines.2 || lines.3 {
+        if lines.0 || lines.1 || lines.2 || lines.3 { // disabled temts
             strategy = Strategy::Bounds;
             last_changed = Instant::now();
         } else if last_strategy != Strategy::NoBall
@@ -223,7 +225,7 @@ async fn strategy_task() {
                 }
                 defence::run(data, &mut state_defence).await;
                 debug_variable!("strategy", "defence");
-                // info!("defence");
+                info!("defence");
             }
             Strategy::GetOut => {
                 if strategy != last_strategy {
@@ -252,8 +254,11 @@ async fn strategy_task() {
             _ => {}
         }
 
-
-
+        // HEADING_SIGNAL.signal(0.);
+        // COORDINATE_SIGNAL.signal((FIELD_WIDTH/2.0,FIELD_LENGTH/2.0));
+        // COORDINATE_SIGNAL.signal((x,y));
+        // COORDINATE_SIGNAL.signal((160.,190.));
+        // info!("x: {}, y: {}", x, y);
         last_strategy = strategy;
     }
 }

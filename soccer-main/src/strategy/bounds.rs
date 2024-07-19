@@ -1,3 +1,5 @@
+use crate::strategy::FIELD_WIDTH;
+use crate::strategy::FIELD_LENGTH;
 use crate::{
     modules::{COORDINATE_SIGNAL, HEADING_SIGNAL},
     strategy::Data,
@@ -37,5 +39,7 @@ pub async fn run(data: Data, state: &mut BoundsState) {
     };
 
     HEADING_SIGNAL.signal(0.);
-    COORDINATE_SIGNAL.signal((new_x, new_y));
+    // COORDINATE_SIGNAL.signal((new_x, new_y));
+    COORDINATE_SIGNAL.signal((FIELD_WIDTH/2., FIELD_LENGTH/2.));
+
 }

@@ -50,6 +50,8 @@ async fn core0_task(spawner: Spawner, p: Peripherals0) {
     hardware::camera::init(&spawner, p.camera).await;
     hardware::motor::init(&spawner, p.motor).await;
     hardware::temts::init(&spawner, p.temts).await;
+    hardware::superteam_module::init(&spawner, p.module).await;
+    // hardware::button::init(&spawner, p.button.PIN_22.into(), p.button.PIN_5.into()).await;
     info!("Waiting to start");
 
     let mut button = p.button.BOOTSEL;

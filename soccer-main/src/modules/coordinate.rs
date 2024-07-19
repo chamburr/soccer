@@ -181,6 +181,9 @@ async fn coordinate_task() {
             last_right = right.0;
         }
 
+        // info!("L {}, R {}, F {}, B {}", ignore_left, ignore_right, ignore_front, ignore_back);
+
+
         write_mutex!(COORDINATE_MUTEX, (x, y, true));
         publisher.publish_immediate(());
 

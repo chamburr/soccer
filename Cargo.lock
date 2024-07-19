@@ -1869,6 +1869,7 @@ dependencies = [
  "nalgebra",
  "nb 1.1.0",
  "num-traits",
+ "paste",
  "pio",
  "portable-atomic",
  "smart-leds",
