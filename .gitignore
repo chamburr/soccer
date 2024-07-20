@@ -11,3 +11,9 @@ target/
 
 # Custom
 venv/
+
+# macOS
+**/.DS_Store
+
+# Calibration
+calibrate.txt
