@@ -46,6 +46,12 @@ async fn uart_tx_task(mut tx: UartTx<'static, UART0, Async>) {
                 let dis_b = back.0.to_le_bytes();
                 let sig_b = back.1.to_le_bytes();
 
+                // info!("F {:?} {:?}, B {:?} {:?}, L {:?} {:?}, R {:?} {:?}", dis_f, sig_f, dis_b, sig_b, dis_l, sig_l, dis_r, sig_r);
+                info!("F {} {}, B {} {}, L {} {}, R {} {}", front.0, front.1, back.0, back.1, left.0, left.1, right.0, right.1);
+
+                
+
+
                 // info!("front dist: {:?}, sig: {:?}", dis_f, sig_f);
                 // info!("left dist: {:?}, sig: {:?}", dis_l, sig_l);
                 // info!("right dist: {:?}, sig: {:?}", dis_r, sig_r);

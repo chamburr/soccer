@@ -225,7 +225,7 @@ async fn strategy_task() {
                 }
                 defence::run(data, &mut state_defence).await;
                 debug_variable!("strategy", "defence");
-                info!("defence");
+                // info!("defence");
             }
             Strategy::GetOut => {
                 if strategy != last_strategy {

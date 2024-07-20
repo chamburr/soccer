@@ -78,6 +78,8 @@ async fn coordinate_task() {
             (front, back, left, right) = (left, right, front, back);
         }
 
+        // info!("L {} {} R {} {} F {} {} B {} {}", left.0, left.1, right.0, right.1, front.0, front.1, back.0, back.1);
+
         debug_variable!("lidar dist left", left.0);
         debug_variable!("lidar dist right", right.0);
         debug_variable!("lidar dist front", front.0);
