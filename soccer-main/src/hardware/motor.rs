@@ -1,3 +1,4 @@
+use crate::config::get_config;
 use crate::{hardware::MOTOR_SIGNAL, peripherals::PeripheralsMotor};
 use defmt::info;
 use embassy_executor::Spawner;
@@ -50,10 +51,19 @@ async fn motor_task(
         // info!("AM I STUCK");
         let data = MOTOR_SIGNAL.wait().await; // ISSUE: may hog cpu
 
-        motor_fl.set_speed(-data.fl);
-        motor_fr.set_speed(-data.fr);
-        motor_bl.set_speed(-data.bl);
-        motor_br.set_speed(-data.br);
+ 
+        if get_config!(started) {
+            motor_fl.set_speed(-data.fl);
+            motor_fr.set_speed(-data.fr);
+            motor_bl.set_speed(-data.bl);
+            motor_br.set_speed(-data.br);
+        } else {
+            info!("STOP");
+            motor_fl.set_speed(0);
+            motor_fr.set_speed(0);
+            motor_bl.set_speed(0);
+            motor_br.set_speed(0);
+        }
 
         // test
         // info!("running motors");

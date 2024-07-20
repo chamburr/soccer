@@ -35,6 +35,6 @@ async fn module_task(
 
 pub async fn init(spawner: &Spawner, p: PeripheralsModule) {
     info!("Starting module");
-    let pin = Input::new(p.PIN_22, Pull::None);
+    let pin = Input::new(p.PIN_22, Pull::Down);
     spawner.must_spawn(module_task(pin));
 }
