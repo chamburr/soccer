@@ -16,7 +16,7 @@ sensor.set_auto_whitebal(False) # must be turned off for color tracking
 
 sensor.skip_frames(time=500)
 sensor.set_auto_exposure(False, exposure_us=8000)
-sensor.set_auto_gain(False, gain_db = 7)
+sensor.set_auto_gain(False, gain_db = 3)
 sensor.set_auto_whitebal(False)
 sensor.set_framebuffers(3)
 
@@ -38,7 +38,7 @@ centre_y = 131
 #thresh_ball = (13, 62, 33, 62, 17, 75) # ground floor
 #thresh_ball = (14, 62, 54, 75, 11, 41)
 #thresh_ball = (42, 83, 25, 67, 15, 74)
-thresh_ball = (35, 100, 31, 63, 13, 58)
+thresh_ball = (25, 76, 26, 56, 6, 43)
 # old thresh 6/4 (54, 99, 7, 72, 11, 73) # (40, 68, 14, 57, 9, 59)
 # old ball threshes (49, 69, 7, 55, 0, 29) # (45, 69, 3, 60, 19, 65)
 thresh_yellow_goal = (39, 100, -24, 3, 35, 67) # (63, 81, -18, 8, 30, 67)
@@ -84,7 +84,7 @@ while True:
     led3.off()
     img = sensor.snapshot()  # Take a picture and return the image.
     # img.draw_rectangle(83, 79, 73, 73, color=(0,0,0), fill=True)
-    # img.mask_circle(120, 120, 112)
+    img.mask_circle(120, 120, 115)
     ball = img.find_blobs([thresh_ball], pixel_threshold=0, area_threshold=0, merge=True)
 #    if(not use_blue):
 #        yellow_goal = img.find_blobs([thresh_yellow_goal], pixel_threshold=100, area_threshold=0, merge=True, margin=20)
@@ -111,6 +111,7 @@ while True:
         ball_dist = (ball_x ** 2 + ball_y ** 2) ** 0.5
         print("angle ", ball_angle, "dist ", ball_dist)
         actual_dist = m * math.exp(t*ball_dist) + c*ball_dist + d
+
 #        print("actual", actual_dist)
         angle_uart = round(ball_angle * 128)
         dist_uart = round(actual_dist * 128)
