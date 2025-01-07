@@ -8,7 +8,7 @@ Here is a photo from the competition, taken by the RoboCup Media Team.
 
 ## Hardware
 
-The main hardware we have consists of 4 ToF LiDARs, an IMU with a magnetometer, a low-resolution camera, 4 motors, and several ambient light sensors. In an attempt to keep our robots simple and reliable, we unfortunately don't have anything interesting like kickers and dribblers. Hardware files are currently not available online.
+The main hardware we have consists of 4 ToF LiDARs, an IMU with a magnetometer, a low-resolution camera, 4 motors, and several ambient light sensors. In an attempt to keep our robots simple and reliable, we unfortunately do not have anything special like kickers and dribblers. Hardware files are available at [this repository](https://github.com/PorridgePi/soccer-pcbs).
 
 ### Microcontrollers
 
