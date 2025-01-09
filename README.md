@@ -46,6 +46,63 @@ We mentioned that asynchronous programming is the most attractive feature in Rus
 - We use signals, which are pub/sub channels that only keep the latest value, for controlling hardware and modules. For instance, if we want to control a motor's speed, we would publish a value into that motor's signal.
 - Finally, we have a thread that runs code to decide which strategy to use whenever new data is available. As only one strategy is used at a time, we decided against having a thread for each strategy. Instead, we wrote functions that can be run momentarily, and have the main thread call the functions while passing in data and persistent state.
 
+### Usage
+
+#### Prerequisites
+1. [Rust](https://www.rust-lang.org/tools/install)
+	- for macOS or Linux (Unix-like OS):
+	```sh
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+	```
+	- for Windows, see [this page](https://forge.rust-lang.org/infra/other-installation-methods.html)
+2. [OpenMV IDE](https://openmv.io/pages/download)
+	- download from the website above
+3. [`probe-rs`](https://probe.rs/) to program Raspberry Pico W
+	- see [installation guide](https://probe.rs/docs/getting-started/installation/)
+4. [`elf2uf2`](https://github.com/JoNil/elf2uf2-rs) to program RP2040-Zero
+	- with Rust installed, run:
+	```sh
+	cargo install elf2uf2-rs
+	```
+5. Raspberry Pi Pico Debug Probe
+	- flash a normal Pico with the [debug probe firmware](https://github.com/raspberrypi/debugprobe)
+
+#### Compilation and Running of Code on Microcontrollers
+1. Clone the repository and checkout to the appropriate branch
+```sh
+git clone https://github.com/chamburr/soccer.git
+cd soccer
+git checkout internationals
+```
+
+2. To run the `main` code on the Pico W,
+	1. Connect the Pico Debug Probe to the computer
+	2. Connect the Debug Probe to the 3 appropriate pins on the PCB
+	3. In [`.cargo/config.toml`](.cargo/config.toml), ensure the `runner` is set to `probe-rs` and the other line with `elf2uf2-rs` is commented out, i.e.
+	```toml
+	[target.thumbv6m-none-eabi]
+	runner = "probe-rs run --chip RP2040"
+	#runner = "elf2uf2-rs --deploy --serial --verbose"
+	```
+	4. Run the code
+	```sh
+	cargo run -p soccer-main --release
+	```
+
+3. To run the `vision` code on the RP2040-Zero,
+	1. Hold the `BOOT` button on the RP2040-Zero and connect the RP2040-Zero directly to the computer using a USB-C cable
+	2. Ensure that a new drive named `RPI-RP2` appears on the computer
+	3. In [`.cargo/config.toml`](.cargo/config.toml), ensure the `runner` is set to `elf2uf2-rs` and the other line with `probe-rs` is commented out, i.e.
+	```toml
+	[target.thumbv6m-none-eabi]
+	#runner = "probe-rs run --chip RP2040"
+	runner = "elf2uf2-rs --deploy --serial --verbose"
+	```
+	4. Run the code
+	```sh
+	cargo run -p soccer-vision --release
+	```
+
 ## Caveats
 
 Here are several software issues we encountered while writing code for our robots.
